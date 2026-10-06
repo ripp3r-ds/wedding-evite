@@ -52,7 +52,7 @@ function CountdownUnit({
   );
 }
 
-export function Countdown() {
+export function Countdown({ variant = "story" }: { variant?: "story" | "journey" }) {
   const [timeLeft, setTimeLeft] = useState<TimeLeft | null>(null);
   const reducedMotion = useReducedMotion();
 
@@ -67,7 +67,7 @@ export function Countdown() {
   return (
     <section
       aria-label="Countdown to the wedding on October 29, 2026 at 10:30 PM India time"
-      className="countdown"
+      className={`countdown countdown-${variant}`}
     >
       <p className="countdown-kicker">UNTIL WE SAY “I DO”</p>
       <div className="countdown-clock">
