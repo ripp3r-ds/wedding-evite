@@ -1,5 +1,13 @@
 import type { Metadata, Viewport } from "next";
+import localFont from "next/font/local";
 import "./globals.css";
+
+const calligraphy = localFont({
+  src: "./fonts/Tangerine-Regular.ttf",
+  display: "swap",
+  variable: "--font-calligraphy",
+  weight: "400"
+});
 
 export const metadata: Metadata = {
   title: "Rithwik & Kalyani — Wedding Invitation",
@@ -20,7 +28,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body className={calligraphy.variable}>{children}</body>
     </html>
   );
 }
