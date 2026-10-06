@@ -2,6 +2,7 @@
 
 import {
   FormEvent,
+  useCallback,
   useRef,
   useState
 } from "react";
@@ -12,21 +13,21 @@ import {
   useScroll,
   useTransform
 } from "framer-motion";
-import { CoupleArtwork } from "./components/couple-artwork";
-import { Countdown } from "./components/countdown";
+import { WeddingOpening } from "./components/wedding-opening";
+import { WeddingPortrait } from "./components/wedding-portrait";
 import { logRsvpInBackground, type RsvpSubmission } from "../lib/rsvp";
 
 const events = [
   {
     id: "haldi",
     number: "01",
-    title: "Haldi Ceremony",
+    title: "Rithwik's Haldi",
     date: "October 28",
     time: "5:00 PM",
-    place: "Our Home, Khammam",
+    place: "Rithwik's Home, Khammam",
     map: "https://maps.app.goo.gl/tnUscYRzi9mA4BR2A?g_st=ac",
     scene: "haldi",
-    note: "A little turmeric, lots of laughter, and the beginning of everything."
+    note: "A little turmeric, lots of laughter, and blessings at Rithwik's home."
   },
   {
     id: "wedding",
@@ -48,7 +49,7 @@ const events = [
     place: "Kalluru, Khammam",
     map: "https://maps.app.goo.gl/XMZRrdvo9hHRgTru7?g_st=ac",
     scene: "reception",
-    note: "One more evening together, filled with music and home-cooked joy."
+    note: "A warm evening together, filled with music and shared memories."
   }
 ] as const;
 
@@ -93,75 +94,6 @@ function ExternalLinkIcon() {
   );
 }
 
-function BrassLamp({ className = "" }: { className?: string }) {
-  return (
-    <svg
-      aria-hidden="true"
-      viewBox="0 0 80 110"
-      fill="none"
-      className={className}
-    >
-      <path
-        d="M40 3c-7 9-8 16-3 22l3 3 3-3c5-6 4-13-3-22Z"
-        fill="#F4BE55"
-        className="lamp-flame"
-      />
-      <path
-        d="M17 57c0 9 10 14 23 14s23-5 23-14H17Z"
-        fill="#BD8136"
-        stroke="#6A3C27"
-        strokeWidth="2"
-      />
-      <path
-        d="M12 57h56M22 72l6 7h24l6-7m-18 7v18m-13 0h26m-32 8h38"
-        stroke="#8B5A30"
-        strokeWidth="3"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M20 51c0-10 9-18 20-18s20 8 20 18H20Z"
-        fill="#DAA74C"
-        stroke="#8B5A30"
-        strokeWidth="2"
-      />
-      <circle cx="40" cy="51" r="3" fill="#F7D987" />
-      <path
-        d="M29 53c3 3 6 4 11 4s8-1 11-4"
-        stroke="#F6D88A"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
-function MangoLeaves() {
-  return (
-    <svg
-      aria-hidden="true"
-      viewBox="0 0 240 82"
-      fill="none"
-      className="mango-garland"
-    >
-      <path
-        d="M5 10c48 68 182 68 230 0"
-        stroke="#8B6840"
-        strokeWidth="2"
-      />
-      {[22, 48, 75, 103, 137, 165, 192, 218].map((x, index) => (
-        <path
-          key={x}
-          d={`M${x} ${19 + Math.round(Math.sin(index) * 10)}c-10-7-9-16 1-18 8 8 6 14-1 18Zm2 1c9-7 18-6 18 4-8 7-15 5-18-4Z`}
-          fill={index % 2 === 0 ? "#66744C" : "#7D8052"}
-          stroke="#536340"
-          strokeWidth="1"
-        />
-      ))}
-    </svg>
-  );
-}
-
 function EventCard({
   event,
   index
@@ -192,9 +124,10 @@ function EventCard({
         }}
         aria-hidden="true"
       >
-        <CoupleArtwork
-          alt={`${event.title} couple illustration`}
+        <WeddingPortrait
+          alt={`Framed portrait of Rithwik and Kalyani at ${event.title}`}
           className="event-artwork-image"
+          objectPosition="50% 21%"
           scene={event.scene}
         />
       </motion.div>
@@ -254,7 +187,7 @@ function RSVPForm() {
       "Wedding RSVP — Rithwik & Kalyani",
       "",
       `Guest name(s): ${form.guestNames.trim()}`,
-      `Haldi Ceremony (Oct 28): ${form.haldi ? "Attending" : "Not attending"}`,
+      `Rithwik's Haldi (Oct 28): ${form.haldi ? "Attending" : "Not attending"}`,
       `Wedding (Oct 29): ${form.wedding ? "Attending" : "Not attending"}`,
       `Reception (Oct 30): ${form.reception ? "Attending" : "Not attending"}`,
       `Travel arrival / notes: ${form.travelNotes.trim() || "None"}`
@@ -372,7 +305,7 @@ function RSVPForm() {
               )}
             </AnimatePresence>
             <p className="form-footnote">
-              All food is vegetarian. Your reply opens in WhatsApp so you can send it when you&apos;re ready.
+              Your reply opens in WhatsApp so you can send it when you&apos;re ready.
             </p>
           </form>
         </div>
@@ -396,15 +329,14 @@ function Story() {
     <motion.main className="story" ref={timelineRef} style={{ backgroundColor }}>
       <div className="story-grain" aria-hidden="true" />
       <div className="story-intro">
-        <span className="eyebrow">FROM OUR LITTLE CORNER OF THE WORLD</span>
+        <span className="eyebrow">FROM RITHWIK&apos;S FAMILY</span>
         <p>
-          With full hearts and our families by our side,
+          With the blessings of our families,
           <br className="desktop-break" /> we invite you to celebrate
         </p>
         <h1>Rithwik <span>&amp;</span> Kalyani</h1>
         <div className="intro-rule"><span>✳</span></div>
-        <p className="intro-caption">Three days. One village. A lifetime together.</p>
-        <Countdown />
+        <p className="intro-caption">Three days of joy, tradition, and togetherness.</p>
       </div>
 
       <div className="timeline">
@@ -421,114 +353,21 @@ function Story() {
 
       <footer className="story-footer">
         <span aria-hidden="true">❋</span>
-        <p>Until then, keep a little light in your window.</p>
-        <small>WITH LOVE, RITHWIK &amp; KALYANI</small>
+        <p>We can&apos;t wait to celebrate with you.</p>
+        <small>WITH LOVE, RITHWIK&apos;S FAMILY</small>
       </footer>
     </motion.main>
   );
 }
 
 export default function Home() {
-  const [entered, setEntered] = useState(false);
-  const [opening, setOpening] = useState(false);
-  const reducedMotion = useReducedMotion();
+  const [storyUnlocked, setStoryUnlocked] = useState(false);
+  const unlockStory = useCallback(() => setStoryUnlocked(true), []);
 
   return (
-    <div className="invitation">
-      <AnimatePresence mode="wait">
-        {!entered ? (
-          <motion.section
-            key="welcome"
-            className="welcome-screen"
-            initial={{ opacity: 1, scale: 1 }}
-            exit={{
-              opacity: 0,
-              scale: reducedMotion ? 1 : 1.025,
-              y: reducedMotion ? 0 : -12
-            }}
-            transition={{ duration: reducedMotion ? 0 : 0.8, ease: [0.22, 1, 0.36, 1] }}
-            animate={{ opacity: 1 }}
-            aria-label="Welcome"
-          >
-            <div className="welcome-grain" aria-hidden="true" />
-            <MangoLeaves />
-            <div className="welcome-landscape" aria-hidden="true">
-              <div className="hill hill-back" />
-              <div className="hill hill-front" />
-              <div className="village-home"><span /><span /><span /></div>
-              <div className="welcome-fireflies">✦ <span>✧</span> ✦</div>
-            </div>
-            <BrassLamp className="brass-lamp lamp-left" />
-            <BrassLamp className="brass-lamp lamp-right" />
-            <div className={`welcome-copy${opening ? " is-opening" : ""}`}>
-              <span className="eyebrow">A LITTLE WEDDING INVITATION</span>
-              <motion.div
-                className="invitation-card"
-                animate={{
-                  rotateY: opening && !reducedMotion ? -8 : 0,
-                  scale: opening && !reducedMotion ? 1.025 : 1
-                }}
-                onAnimationComplete={() => {
-                  if (opening) {
-                    setEntered(true);
-                  }
-                }}
-                transition={{
-                  duration: reducedMotion ? 0 : 1.35,
-                  delay: opening && !reducedMotion ? 0.2 : 0,
-                  ease: [0.22, 1, 0.36, 1]
-                }}
-              >
-                <div className="invitation-card-inner">
-                  <span className="invitation-card-topline">WITH LOVE, WE INVITE YOU</span>
-                  <CoupleArtwork
-                    alt="Rithwik and Kalyani"
-                    className="opening-artwork"
-                    imageClassName="opening-artwork-image"
-                    reveal={opening}
-                    scene="opening"
-                  />
-                  <h1>Rithwik <span>&amp;</span> Kalyani</h1>
-                  <span className="welcome-divider">✳</span>
-                  <p>Our village is waiting for you</p>
-                  <span className="welcome-date">OCTOBER 28 — 30, 2026</span>
-                </div>
-                <motion.div
-                  className="invitation-envelope-flap"
-                  animate={{ rotateX: opening && !reducedMotion ? -155 : 0 }}
-                  transition={{
-                    duration: reducedMotion ? 0 : 1.05,
-                    delay: opening && !reducedMotion ? 0.12 : 0,
-                    ease: [0.22, 1, 0.36, 1]
-                  }}
-                  aria-hidden="true"
-                />
-                <div className="invitation-card-border" aria-hidden="true" />
-              </motion.div>
-              <button
-                className="enter-prompt"
-                disabled={opening}
-                onClick={() => setOpening(true)}
-                type="button"
-              >
-                <span aria-hidden="true">{opening ? "✳" : "↓"}</span>
-                {opening ? "Opening your invitation…" : "Tap to open"}
-              </button>
-            </div>
-            <span className="welcome-corner corner-left" aria-hidden="true">❋</span>
-            <span className="welcome-corner corner-right" aria-hidden="true">❋</span>
-          </motion.section>
-        ) : (
-          <motion.div
-            key="story"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: reducedMotion ? 0 : 1.1 }}
-          >
-            <Story />
-          </motion.div>
-        )}
-      </AnimatePresence>
+    <div className={`invitation${storyUnlocked ? "" : " is-locked"}`}>
+      <WeddingOpening onShowDetails={unlockStory} />
+      <Story />
     </div>
   );
 }

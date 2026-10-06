@@ -7,16 +7,18 @@ npm install
 npm run dev
 ```
 
-## Add the couple's artwork
+The invitation uses a button-led opening: open the sealed card, scratch to uncover the couple's names and wedding date, continue to the countdown, then press **Scroll for details** to reach the celebration timeline.
 
-Place the four transparent illustrations in `public/images/couple/`:
+## Update the couple's portraits
+
+Replace the supplied PNGs in `public/images/couple/`:
 
 - `opening.png`
 - `haldi.png`
 - `wedding.png`
 - `reception.png`
 
-The shared [`CoupleArtwork`](./app/components/couple-artwork.tsx) component maps each scene to its image. The opening illustration is preloaded; ceremony art is lazy-loaded. If an image has not been added yet, a decorative monogram is shown instead.
+The shared [`WeddingPortrait`](./app/components/wedding-portrait.tsx) component maps each scene to its image and crops it inside a gold portrait medallion. The opening portrait is preloaded; ceremony portraits are lazy-loaded.
 
 ## Optional Google Sheets RSVP logging
 
