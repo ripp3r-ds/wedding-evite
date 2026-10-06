@@ -3,16 +3,11 @@
 import {
   FormEvent,
   useCallback,
+  useEffect,
   useRef,
   useState
 } from "react";
-import {
-  AnimatePresence,
-  motion,
-  useReducedMotion,
-  useScroll,
-  useTransform
-} from "framer-motion";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { WeddingOpening } from "./components/wedding-opening";
 import { WeddingPortrait } from "./components/wedding-portrait";
 import { logRsvpInBackground, type RsvpSubmission } from "../lib/rsvp";
@@ -51,6 +46,21 @@ const events = [
     scene: "reception",
     note: "A warm evening together, filled with music and shared memories."
   }
+] as const;
+
+const detailStops = [
+  { id: "haldi", label: "Scroll to Haldi" },
+  { id: "wedding", label: "Scroll to the Wedding" },
+  { id: "reception", label: "Scroll to the Reception" },
+  { id: "rsvp", label: "Scroll to RSVP" }
+] as const;
+
+const hallColors = [
+  "#4a1a20",
+  "#b8862d",
+  "#672e38",
+  "#c69250",
+  "#3d221c"
 ] as const;
 
 type RsvpState = {
@@ -95,55 +105,43 @@ function ExternalLinkIcon() {
 }
 
 function EventCard({
-  event,
-  index
+  event
 }: {
   event: (typeof events)[number];
-  index: number;
 }) {
   const reducedMotion = useReducedMotion();
 
   return (
     <motion.article
-      className={`event-row ${index % 2 === 0 ? "event-row-odd" : "event-row-even"}`}
-      initial={reducedMotion ? false : { opacity: 0, y: 34 }}
+      className="event-stop"
+      initial={reducedMotion ? false : { opacity: 0, y: 28 }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.25 }}
-      transition={{ duration: reducedMotion ? 0 : 0.75, ease: [0.22, 1, 0.36, 1] }}
+      viewport={{ once: true, amount: 0.2 }}
+      transition={{ duration: reducedMotion ? 0 : 0.7, ease: [0.22, 1, 0.36, 1] }}
+      data-scene={event.scene}
       id={event.id}
     >
-      <motion.div
-        className={`event-artwork event-artwork-${index % 2 === 0 ? "right" : "left"}`}
-        initial={reducedMotion ? false : { opacity: 0, y: 22, scale: 0.96 }}
-        whileInView={{ opacity: 1, y: 0, scale: 1 }}
-        viewport={{ once: true, amount: 0.25 }}
-        transition={{
-          duration: reducedMotion ? 0 : 0.9,
-          delay: reducedMotion ? 0 : 0.12,
-          ease: [0.22, 1, 0.36, 1]
-        }}
-        aria-hidden="true"
-      >
-        <WeddingPortrait
-          alt={`Framed portrait of Rithwik and Kalyani at ${event.title}`}
-          className="event-artwork-image"
-          objectPosition="50% 21%"
-          scene={event.scene}
-        />
-      </motion.div>
-      <span className="event-marker" aria-hidden="true">
-        <span>{event.number}</span>
-      </span>
+      <WeddingPortrait
+        alt={`Rithwik and Kalyani at ${event.title}`}
+        className="event-stop-portrait"
+        objectPosition="50% 21%"
+        scene={event.scene}
+      />
       <div className="event-card">
         <div className="event-card-topline">
           <span>YOU ARE INVITED</span>
           <span className="event-date">{event.date}</span>
         </div>
-        <h2>{event.title}</h2>
+        <h2>
+          <span className="event-number">{event.number}</span>
+          {event.title}
+        </h2>
         <p className="event-note">{event.note}</p>
         <div className="event-details">
           <span className="event-time">{event.time}</span>
-          <span aria-hidden="true" className="detail-divider">·</span>
+          <span aria-hidden="true" className="detail-divider">
+            ·
+          </span>
           <span>{event.place}</span>
         </div>
         <a
@@ -215,12 +213,12 @@ function RSVPForm() {
 
   return (
     <motion.section
-      className="rsvp-section"
+      className="rsvp-section event-stop"
       id="rsvp"
-      initial={{ opacity: 0, y: 42 }}
+      initial={{ opacity: 0, y: 28 }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.15 }}
-      transition={{ duration: reducedMotion ? 0 : 0.8, ease: [0.22, 1, 0.36, 1] }}
+      viewport={{ once: true, amount: 0.12 }}
+      transition={{ duration: reducedMotion ? 0 : 0.7, ease: [0.22, 1, 0.36, 1] }}
       aria-labelledby="rsvp-heading"
     >
       <div className="mandapam">
@@ -300,7 +298,7 @@ function RSVPForm() {
                   exit={{ opacity: 0, y: reducedMotion ? 0 : -4 }}
                   transition={{ duration: reducedMotion ? 0 : 0.3 }}
                 >
-                  ✳ Your RSVP message is ready in WhatsApp ✳
+                  Your RSVP message is ready in WhatsApp
                 </motion.p>
               )}
             </AnimatePresence>
@@ -310,64 +308,124 @@ function RSVPForm() {
           </form>
         </div>
       </div>
-    </motion.section>
-  );
-}
-
-function Story() {
-  const timelineRef = useRef<HTMLElement>(null);
-  const { scrollYProgress } = useScroll({
-    target: timelineRef,
-    offset: ["start start", "end end"]
-  });
-  const backgroundColor = useTransform(
-    scrollYProgress,
-    [0, 0.46, 0.74, 1],
-    ["#77805d", "#672e38", "#c39a43", "#c69250"]
-  );
-  return (
-    <motion.main className="story" ref={timelineRef} style={{ backgroundColor }}>
-      <div className="story-grain" aria-hidden="true" />
-      <div className="story-intro">
-        <span className="eyebrow">FROM RITHWIK&apos;S FAMILY</span>
-        <p>
-          With the blessings of our families,
-          <br className="desktop-break" /> we invite you to celebrate
-        </p>
-        <h1>Rithwik <span>&amp;</span> Kalyani</h1>
-        <div className="intro-rule"><span>✳</span></div>
-        <p className="intro-caption">Three days of joy, tradition, and togetherness.</p>
-      </div>
-
-      <div className="timeline">
-        <div className="thread-line" aria-hidden="true">
-          <motion.span className="thread-red" style={{ scaleY: scrollYProgress }} />
-        </div>
-        <div className="event-list">
-          {events.map((event, index) => (
-            <EventCard event={event} index={index} key={event.id} />
-          ))}
-        </div>
-        <RSVPForm />
-      </div>
-
       <footer className="story-footer">
         <span aria-hidden="true">❋</span>
         <p>We can&apos;t wait to celebrate with you.</p>
         <small>WITH LOVE, RITHWIK&apos;S FAMILY</small>
       </footer>
-    </motion.main>
+    </motion.section>
+  );
+}
+
+function Story() {
+  return (
+    <main className="story">
+      <div className="story-grain" aria-hidden="true" />
+      {events.map((event) => (
+        <EventCard event={event} key={event.id} />
+      ))}
+      <RSVPForm />
+    </main>
   );
 }
 
 export default function Home() {
-  const [storyUnlocked, setStoryUnlocked] = useState(false);
-  const unlockStory = useCallback(() => setStoryUnlocked(true), []);
+  const [announced, setAnnounced] = useState(false);
+  const [stopIndex, setStopIndex] = useState(-1);
+  const scrollerRef = useRef<HTMLDivElement>(null);
+  const reducedMotion = useReducedMotion();
+  const unlockStory = useCallback(() => setAnnounced(true), []);
+
+  const nextStop = detailStops[stopIndex + 1];
+  const hall = hallColors[stopIndex + 1] ?? hallColors[0];
+
+  useEffect(() => {
+    const scroller = scrollerRef.current;
+    if (!scroller) return;
+
+    let frame = 0;
+    const sectionIds = ["opening", ...detailStops.map((stop) => stop.id)];
+    const syncStopToScroll = () => {
+      window.cancelAnimationFrame(frame);
+      frame = window.requestAnimationFrame(() => {
+        const bounds = scroller.getBoundingClientRect();
+        const center = bounds.top + scroller.clientHeight / 2;
+        let closestIndex = 0;
+        let closestDistance = Number.POSITIVE_INFINITY;
+
+        sectionIds.forEach((id, index) => {
+          const section = document.getElementById(id);
+          if (!section) return;
+          const sectionBounds = section.getBoundingClientRect();
+          const distance =
+            center < sectionBounds.top
+              ? sectionBounds.top - center
+              : center > sectionBounds.bottom
+                ? center - sectionBounds.bottom
+                : 0;
+
+          if (distance < closestDistance) {
+            closestDistance = distance;
+            closestIndex = index;
+          }
+        });
+
+        setStopIndex((current) =>
+          current === closestIndex - 1 ? current : closestIndex - 1
+        );
+      });
+    };
+
+    scroller.addEventListener("scroll", syncStopToScroll, { passive: true });
+    syncStopToScroll();
+    return () => {
+      scroller.removeEventListener("scroll", syncStopToScroll);
+      window.cancelAnimationFrame(frame);
+    };
+  }, []);
+
+  function scrollToStop(id: string) {
+    const scroller = scrollerRef.current;
+    const target = document.getElementById(id);
+    if (!scroller || !target) return;
+    const top =
+      target.getBoundingClientRect().top -
+      scroller.getBoundingClientRect().top +
+      scroller.scrollTop;
+    scroller.scrollTo({
+      top,
+      behavior: reducedMotion ? "auto" : "smooth"
+    });
+  }
+
+  function showNextDetails() {
+    const upcoming = detailStops[stopIndex + 1];
+    if (!upcoming) return;
+    setStopIndex((current) => current + 1);
+    window.requestAnimationFrame(() => scrollToStop(upcoming.id));
+  }
 
   return (
-    <div className={`invitation${storyUnlocked ? "" : " is-locked"}`}>
-      <WeddingOpening onShowDetails={unlockStory} />
-      <Story />
+    <div className="invitation" style={{ backgroundColor: hall }}>
+      <div
+        aria-label="Wedding invitation sections"
+        className="invitation-scroller"
+        ref={scrollerRef}
+        role="region"
+        tabIndex={0}
+      >
+        <WeddingOpening onAnnouncement={unlockStory} />
+        <Story />
+      </div>
+      {announced && nextStop && (
+        <button
+          className="journey-next-button sticky-details"
+          onClick={showNextDetails}
+          type="button"
+        >
+          {nextStop.label} <span aria-hidden="true">↓</span>
+        </button>
+      )}
     </div>
   );
 }

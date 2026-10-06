@@ -1,20 +1,35 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import { motion, useReducedMotion } from "framer-motion";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 
-const REVEAL_THRESHOLD = 0.53;
+const REVEAL_THRESHOLD = 0.2;
 
-export function ScratchReveal({ onContinue }: { onContinue: () => void }) {
+export function ScratchReveal({
+  active,
+  autoReveal,
+  onRevealed,
+  children
+}: {
+  active: boolean;
+  autoReveal?: boolean;
+  onRevealed: () => void;
+  children: ReactNode;
+}) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const completeRef = useRef(false);
   const moveCount = useRef(0);
   const [scratched, setScratched] = useState(false);
-  const reducedMotion = useReducedMotion();
+
+  const finish = useCallback(() => {
+    if (completeRef.current) return;
+    completeRef.current = true;
+    setScratched(true);
+    onRevealed();
+  }, [onRevealed]);
 
   const paintSurface = useCallback(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!canvas || completeRef.current) return;
     const bounds = canvas.getBoundingClientRect();
     if (!bounds.width || !bounds.height) return;
     const pixelRatio = Math.min(window.devicePixelRatio || 1, 1.25);
@@ -27,9 +42,9 @@ export function ScratchReveal({ onContinue }: { onContinue: () => void }) {
     const width = bounds.width;
     const height = bounds.height;
     const gold = context.createLinearGradient(0, 0, width, height);
-    gold.addColorStop(0, "#ebd8a7");
-    gold.addColorStop(0.46, "#d7bd7d");
-    gold.addColorStop(1, "#e8d3a0");
+    gold.addColorStop(0, "rgba(235, 216, 167, .82)");
+    gold.addColorStop(0.46, "rgba(215, 189, 125, .76)");
+    gold.addColorStop(1, "rgba(232, 211, 160, .82)");
     context.fillStyle = gold;
     context.fillRect(0, 0, width, height);
 
@@ -47,25 +62,20 @@ export function ScratchReveal({ onContinue }: { onContinue: () => void }) {
 
     context.strokeStyle = "rgba(123, 83, 46, 0.5)";
     context.lineWidth = 1;
-    context.strokeRect(12.5, 12.5, width - 25, height - 25);
-    context.strokeStyle = "rgba(255, 248, 223, 0.7)";
-    context.strokeRect(16.5, 16.5, width - 33, height - 33);
+    context.strokeRect(10.5, 10.5, width - 21, height - 21);
 
     const centerX = width / 2;
     const centerY = height / 2;
-    context.strokeStyle = "rgba(128, 87, 49, 0.23)";
+    context.strokeStyle = "rgba(128, 87, 49, 0.28)";
     context.lineWidth = 1.2;
     for (let petal = 0; petal < 8; petal += 1) {
       const angle = (Math.PI * 2 * petal) / 8;
-      const x = centerX + Math.cos(angle) * 62;
-      const y = centerY + Math.sin(angle) * 44;
+      const x = centerX + Math.cos(angle) * 54;
+      const y = centerY + Math.sin(angle) * 38;
       context.beginPath();
-      context.ellipse(x, y, 9, 18, angle, 0, Math.PI * 2);
+      context.ellipse(x, y, 8, 16, angle, 0, Math.PI * 2);
       context.stroke();
     }
-    context.beginPath();
-    context.arc(centerX, centerY, 11, 0, Math.PI * 2);
-    context.stroke();
   }, []);
 
   useEffect(() => {
@@ -76,6 +86,10 @@ export function ScratchReveal({ onContinue }: { onContinue: () => void }) {
     observer.observe(canvas);
     return () => observer.disconnect();
   }, [paintSurface]);
+
+  useEffect(() => {
+    if (active && autoReveal) finish();
+  }, [active, autoReveal, finish]);
 
   const measureScratch = useCallback(() => {
     const canvas = canvasRef.current;
@@ -90,37 +104,37 @@ export function ScratchReveal({ onContinue }: { onContinue: () => void }) {
       samples += 1;
       if (data[pixel] < 24) cleared += 1;
     }
-    if (samples && cleared / samples >= REVEAL_THRESHOLD) {
-      completeRef.current = true;
-      setScratched(true);
-    }
-  }, []);
+    if (samples && cleared / samples >= REVEAL_THRESHOLD) finish();
+  }, [finish]);
 
-  const scratchAt = useCallback((event: React.PointerEvent<HTMLCanvasElement>) => {
-    const canvas = canvasRef.current;
-    const context = canvas?.getContext("2d", { willReadFrequently: true });
-    if (!canvas || !context || completeRef.current) return;
-    const bounds = canvas.getBoundingClientRect();
-    const x = event.clientX - bounds.left;
-    const y = event.clientY - bounds.top;
-    context.globalCompositeOperation = "destination-out";
-    context.lineWidth = 38;
-    context.lineCap = "round";
-    context.lineJoin = "round";
-    context.lineTo(x, y);
-    context.stroke();
-    context.beginPath();
-    context.arc(x, y, 19, 0, Math.PI * 2);
-    context.fill();
-    context.beginPath();
-    context.moveTo(x, y);
+  const scratchAt = useCallback(
+    (event: React.PointerEvent<HTMLCanvasElement>) => {
+      const canvas = canvasRef.current;
+      const context = canvas?.getContext("2d", { willReadFrequently: true });
+      if (!canvas || !context || completeRef.current || !active) return;
+      const bounds = canvas.getBoundingClientRect();
+      const x = event.clientX - bounds.left;
+      const y = event.clientY - bounds.top;
+      context.globalCompositeOperation = "destination-out";
+      context.lineWidth = 38;
+      context.lineCap = "round";
+      context.lineJoin = "round";
+      context.lineTo(x, y);
+      context.stroke();
+      context.beginPath();
+      context.arc(x, y, 19, 0, Math.PI * 2);
+      context.fill();
+      context.beginPath();
+      context.moveTo(x, y);
 
-    moveCount.current += 1;
-    if (moveCount.current % 8 === 0) measureScratch();
-  }, [measureScratch]);
+      moveCount.current += 1;
+      if (moveCount.current % 8 === 0) measureScratch();
+    },
+    [active, measureScratch]
+  );
 
   function beginScratch(event: React.PointerEvent<HTMLCanvasElement>) {
-    if (completeRef.current) return;
+    if (completeRef.current || !active) return;
     event.currentTarget.setPointerCapture(event.pointerId);
     const context = event.currentTarget.getContext("2d", { willReadFrequently: true });
     if (!context) return;
@@ -131,68 +145,48 @@ export function ScratchReveal({ onContinue }: { onContinue: () => void }) {
   }
 
   return (
-    <div className="scratch-stage">
-      <motion.div
-        className={`scratch-card${scratched ? " is-scratched" : ""}`}
-        initial={{ opacity: 0, y: reducedMotion ? 0 : 18 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: reducedMotion ? 0 : -12, scale: reducedMotion ? 1 : 0.985 }}
-        transition={{ duration: reducedMotion ? 0 : 0.65, ease: [0.22, 1, 0.36, 1] }}
+    <div className={`scratch-card${scratched ? " is-scratched" : ""}`}>
+      <div className="scratch-photo-frame">{children}</div>
+      <div
+        className="scratch-date-reveal"
+        aria-live="polite"
+        aria-hidden={!scratched}
+        aria-label="Rithwik and Kalyani are getting married on October 29, 2026"
       >
-        <div
-          className="scratch-date-reveal"
-          aria-live="polite"
-          aria-hidden={!scratched}
-          aria-label="Rithwik and Kalyani are getting hitched on October 29, 2026"
-        >
-          <span className="scratch-couple-names">
-            Rithwik <i>&amp;</i><br />Kalyani
-          </span>
-          <strong>are getting hitched</strong>
-          <time dateTime="2026-10-29">Oct 29, 2026</time>
-        </div>
-        <canvas
-          ref={canvasRef}
-          aria-label="Scratch here"
-          className="scratch-surface"
-          role="button"
-          tabIndex={0}
-          onPointerDown={beginScratch}
-          onPointerMove={(event) => {
-            if (event.currentTarget.hasPointerCapture(event.pointerId)) scratchAt(event);
-          }}
-          onPointerUp={(event) => {
-            if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-              event.currentTarget.releasePointerCapture(event.pointerId);
-            }
-            measureScratch();
-          }}
-          onPointerCancel={measureScratch}
-          onKeyDown={(event) => {
-            if (event.key === "Enter" || event.key === " ") {
-              event.preventDefault();
-              completeRef.current = true;
-              setScratched(true);
-            }
-          }}
-        />
+        <span className="scratch-couple-names">
+          Rithwik <i>&amp;</i> Kalyani
+        </span>
+        <strong>are getting married</strong>
+        <time dateTime="2026-10-29">October 29</time>
+      </div>
+      <canvas
+        ref={canvasRef}
+        aria-label="Scratch to reveal"
+        className="scratch-surface"
+        role="button"
+        tabIndex={active && !scratched ? 0 : -1}
+        onPointerDown={beginScratch}
+        onPointerMove={(event) => {
+          if (event.currentTarget.hasPointerCapture(event.pointerId)) scratchAt(event);
+        }}
+        onPointerUp={(event) => {
+          if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+            event.currentTarget.releasePointerCapture(event.pointerId);
+          }
+          measureScratch();
+        }}
+        onPointerCancel={measureScratch}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            finish();
+          }
+        }}
+      />
+      {active && !scratched && (
         <div className="scratch-prompt" aria-hidden="true">
-          <span>Scratch here</span>
+          <span>Scratch to reveal</span>
         </div>
-        <span className="scratch-flower scratch-flower-left" aria-hidden="true">✿</span>
-        <span className="scratch-flower scratch-flower-right" aria-hidden="true">✿</span>
-      </motion.div>
-      {scratched && (
-        <motion.button
-          className="journey-next-button"
-          type="button"
-          onClick={onContinue}
-          initial={{ opacity: 0, y: reducedMotion ? 0 : 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: reducedMotion ? 0 : 0.35 }}
-        >
-          Continue to countdown <span aria-hidden="true">↓</span>
-        </motion.button>
       )}
     </div>
   );

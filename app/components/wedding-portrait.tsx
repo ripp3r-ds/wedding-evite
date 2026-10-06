@@ -56,7 +56,7 @@ export function WeddingPortrait({
           loading={preload ? "eager" : "lazy"}
           onError={() => setImageAvailable(false)}
           preload={preload}
-          sizes={preload ? "(max-width: 640px) 56vw, 250px" : "(max-width: 640px) 40vw, 220px"}
+          sizes={preload ? "(max-width: 640px) 86vw, 420px" : "(max-width: 640px) 48vw, 240px"}
           src={portraits[scene]}
           style={{ objectPosition }}
         />
