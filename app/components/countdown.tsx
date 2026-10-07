@@ -69,7 +69,7 @@ export function Countdown({ variant = "story" }: { variant?: "story" | "journey"
       aria-label="Countdown to the wedding on October 29, 2026 at 10:30 PM India time"
       className={`countdown countdown-${variant}`}
     >
-      <p className="countdown-kicker">UNTIL WE SAY “I DO”</p>
+      <p className="countdown-kicker">UNTIL WE CELEBRATE TOGETHER</p>
       <div className="countdown-clock">
         <CountdownUnit label="Days" value={timeLeft?.days ?? null} reducedMotion={reducedMotion} />
         <span className="countdown-separator" aria-hidden="true">·</span>

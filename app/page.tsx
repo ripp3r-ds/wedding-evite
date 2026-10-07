@@ -9,15 +9,14 @@ import {
 } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { WeddingOpening } from "./components/wedding-opening";
-import { WeddingPortrait } from "./components/wedding-portrait";
 import { logRsvpInBackground, type RsvpSubmission } from "../lib/rsvp";
 
 const events = [
   {
     id: "haldi",
     number: "01",
-    title: "Rithwik's Haldi",
-    date: "October 28",
+    title: "RITHWIK'S HALDI",
+    date: "OCTOBER 28, 2026",
     time: "5:00 PM",
     place: "Rithwik's Home, Khammam",
     map: "https://maps.app.goo.gl/tnUscYRzi9mA4BR2A?g_st=ac",
@@ -27,10 +26,10 @@ const events = [
   {
     id: "wedding",
     number: "02",
-    title: "The Wedding",
-    date: "October 29",
+    title: "THE WEDDING",
+    date: "OCTOBER 29, 2026",
     time: "10:00 PM",
-    place: "LB Nagar, Hyderabad",
+    place: "Amaravati Banquet Hall, LB Nagar, Hyderabad",
     map: "https://maps.app.goo.gl/vrtDszsCvD4BAuDq8?g_st=ac",
     scene: "wedding",
     note: "Under the evening sky, two paths become one."
@@ -38,8 +37,8 @@ const events = [
   {
     id: "reception",
     number: "03",
-    title: "Reception",
-    date: "October 30",
+    title: "RECEPTION",
+    date: "OCTOBER 30, 2026",
     time: "7:00 PM",
     place: "Kalluru, Khammam",
     map: "https://maps.app.goo.gl/XMZRrdvo9hHRgTru7?g_st=ac",
@@ -49,10 +48,10 @@ const events = [
 ] as const;
 
 const detailStops = [
-  { id: "haldi", label: "Scroll to Haldi" },
-  { id: "wedding", label: "Scroll to the Wedding" },
-  { id: "reception", label: "Scroll to the Reception" },
-  { id: "rsvp", label: "Scroll to RSVP" }
+  { id: "haldi", label: "KEEP SCROLLING" },
+  { id: "wedding", label: "KEEP SCROLLING" },
+  { id: "reception", label: "KEEP SCROLLING" },
+  { id: "rsvp", label: "KEEP SCROLLING" }
 ] as const;
 
 const hallColors = [
@@ -121,12 +120,6 @@ function EventCard({
       data-scene={event.scene}
       id={event.id}
     >
-      <WeddingPortrait
-        alt={`Rithwik and Kalyani at ${event.title}`}
-        className="event-stop-portrait"
-        objectPosition="50% 21%"
-        scene={event.scene}
-      />
       <div className="event-card">
         <div className="event-card-topline">
           <span>YOU ARE INVITED</span>
@@ -423,7 +416,7 @@ export default function Home() {
           onClick={showNextDetails}
           type="button"
         >
-          {nextStop.label} <span aria-hidden="true">↓</span>
+          KEEP SCROLLING <span aria-hidden="true">↓</span>
         </button>
       )}
     </div>
