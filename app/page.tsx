@@ -9,41 +9,68 @@ import {
 } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { WeddingOpening } from "./components/wedding-opening";
+import { WeddingPortrait } from "./components/wedding-portrait";
+import { CelebrationArtefacts, DiyaSprite } from "./components/celebration-artefacts";
+import { FrameCorners, OrnamentDivider } from "./components/royal-ornaments";
 import { logRsvpInBackground, type RsvpSubmission } from "../lib/rsvp";
 
 const events = [
   {
     id: "haldi",
-    number: "01",
-    title: "RITHWIK'S HALDI",
+    number: "I",
+    title: "Rithwik's Haldi",
+    telugu: "హల్దీ",
+    day: "28",
+    month: "OCTOBER",
+    year: "2026",
+    weekday: "WEDNESDAY",
     date: "OCTOBER 28, 2026",
     time: "5:00 PM",
     place: "Rithwik's Home, Khammam",
     map: "https://maps.app.goo.gl/tnUscYRzi9mA4BR2A?g_st=ac",
     scene: "haldi",
-    note: "A little turmeric, lots of laughter, and blessings at Rithwik's home."
+    artefact: "marigold",
+    note: "Turmeric, marigolds, and cousins with far too many opinions, in the courtyard Rithwik grew up in.",
+    aside: "",
+    rsvpLabel: "Rithwik's Haldi"
   },
   {
     id: "wedding",
-    number: "02",
-    title: "THE WEDDING",
+    number: "II",
+    title: "Wedding",
+    telugu: "వివాహం",
+    day: "29",
+    month: "OCTOBER",
+    year: "2026",
+    weekday: "THURSDAY",
     date: "OCTOBER 29, 2026",
     time: "10:00 PM",
     place: "Amaravati Banquet Hall, LB Nagar, Hyderabad",
     map: "https://maps.app.goo.gl/vrtDszsCvD4BAuDq8?g_st=ac",
     scene: "wedding",
-    note: "Under the evening sky, two paths become one."
+    artefact: "thalambralu",
+    note: "The muhurtham falls at 10:30 PM. Come early, and bring a steady hand for the thalambralu.",
+    aside: "",
+    rsvpLabel: "Wedding"
   },
   {
     id: "reception",
-    number: "03",
-    title: "RECEPTION",
+    number: "III",
+    title: "Reception",
+    telugu: "విందు",
+    day: "30",
+    month: "OCTOBER",
+    year: "2026",
+    weekday: "FRIDAY",
     date: "OCTOBER 30, 2026",
     time: "7:00 PM",
     place: "Kalluru, Khammam",
     map: "https://maps.app.goo.gl/XMZRrdvo9hHRgTru7?g_st=ac",
     scene: "reception",
-    note: "A warm evening together, filled with music and shared memories."
+    artefact: "diya",
+    note: "Come say hello, stay for dinner, and let us feed you properly before the lamps go out.",
+    aside: "",
+    rsvpLabel: "Reception"
   }
 ] as const;
 
@@ -55,11 +82,11 @@ const detailStops = [
 ] as const;
 
 const hallColors = [
-  "#4a1a20",
-  "#b8862d",
-  "#672e38",
-  "#c69250",
-  "#3d221c"
+  "#2b0e12",
+  "#3c2a09",
+  "#4b1320",
+  "#1b1838",
+  "#2b0e12"
 ] as const;
 
 type RsvpState = {
@@ -84,7 +111,7 @@ function ExternalLinkIcon() {
       aria-hidden="true"
       viewBox="0 0 20 20"
       fill="none"
-      className="h-4 w-4"
+      className="map-link-icon"
     >
       <path
         d="M11.5 3.5h5v5m-.5-4.5-7 7"
@@ -120,23 +147,52 @@ function EventCard({
       data-scene={event.scene}
       id={event.id}
     >
-      <div className="event-card">
-        <div className="event-card-topline">
-          <span>YOU ARE INVITED</span>
-          <span className="event-date">{event.date}</span>
-        </div>
-        <h2>
-          <span className="event-number">{event.number}</span>
-          {event.title}
-        </h2>
-        <p className="event-note">{event.note}</p>
-        <div className="event-details">
-          <span className="event-time">{event.time}</span>
-          <span aria-hidden="true" className="detail-divider">
-            ·
+      <CelebrationArtefacts kind={event.artefact} seed={event.day.charCodeAt(1)} />
+
+      <div className="event-portrait">
+        <WeddingPortrait
+          alt={`Rithwik and Kalyani at the ${event.title.toLowerCase()}`}
+          objectPosition="50% 6%"
+          scene={event.scene}
+          sizes="(max-width: 640px) 72vw, 240px"
+          variant="oval"
+          zoom={1.3}
+        />
+        {event.scene === "reception" ? (
+          <span className="portrait-diya" aria-hidden="true">
+            <DiyaSprite />
           </span>
-          <span>{event.place}</span>
+        ) : null}
+      </div>
+
+      <div className="event-card">
+        <FrameCorners />
+
+        <div className="event-card-topline">
+          <span className="event-number">{event.number}</span>
+          <span className="event-telugu">{event.telugu}</span>
         </div>
+
+        <h2 className="event-title">{event.title}</h2>
+        <OrnamentDivider className="event-rule" />
+
+        <div className="event-date-block">
+          <span className="event-day">{event.day}</span>
+          <span className="event-date-rest">
+            <span className="event-month">{event.month}</span>
+            <span className="event-year">{event.year}</span>
+          </span>
+        </div>
+        <p className="event-when">
+          {event.weekday} <span aria-hidden="true">·</span> {event.time}
+        </p>
+
+        <p className="event-note">{event.note}</p>
+
+        {event.aside ? <p className="event-aside">{event.aside}</p> : null}
+
+        <p className="event-place">{event.place}</p>
+
         <a
           className="map-link"
           href={event.map}
@@ -175,7 +231,7 @@ function RSVPForm() {
     };
 
     const message = [
-      "Wedding RSVP — Rithwik & Kalyani",
+      "Wedding RSVP for Rithwik & Kalyani",
       "",
       `Guest name(s): ${form.guestNames.trim()}`,
       `Rithwik's Haldi (Oct 28): ${form.haldi ? "Attending" : "Not attending"}`,
@@ -221,10 +277,15 @@ function RSVPForm() {
           <span />
         </div>
         <div className="mandap-body">
+          <FrameCorners />
           <div className="rsvp-heading-block">
-            <span className="eyebrow">SAVE A LITTLE PLACE FOR US</span>
+            <span className="eyebrow">SAY YOU&apos;LL COME</span>
             <h2 id="rsvp-heading">Will you be there?</h2>
-            <p>It wouldn&apos;t be the same without you.</p>
+            <OrnamentDivider className="rsvp-rule" />
+            <p>
+              <span className="rsvp-telugu">మీ రాక కోసం ఎదురుచూస్తున్నాం</span>
+              Tell us which days you can make, so we can keep a plate warm.
+            </p>
           </div>
 
           <form onSubmit={submitRsvp}>
@@ -234,7 +295,7 @@ function RSVPForm() {
                 autoComplete="name"
                 name="guestNames"
                 onChange={(event) => updateField("guestNames", event.target.value)}
-                placeholder="The whole family, if you like"
+                placeholder="Your name, and your plus one"
                 required
                 value={form.guestNames}
               />
@@ -254,7 +315,9 @@ function RSVPForm() {
                   />
                   <span className="custom-checkbox" aria-hidden="true" />
                   <span>
-                    <strong>{event.title}</strong>
+                    <strong>
+                      {event.rsvpLabel} <i>{event.telugu}</i>
+                    </strong>
                     <small>{event.date}</small>
                   </span>
                 </label>
@@ -302,17 +365,17 @@ function RSVPForm() {
         </div>
       </div>
       <footer className="story-footer">
-        <span aria-hidden="true">❋</span>
-        <p>We can&apos;t wait to celebrate with you.</p>
-        <small>WITH LOVE, RITHWIK&apos;S FAMILY</small>
+        <OrnamentDivider className="footer-rule" />
+        <p>Come hungry, stay late, and dance badly with us.</p>
+        <small>RITHWIK &amp; KALYANI &middot; OCTOBER 2026</small>
       </footer>
     </motion.section>
   );
 }
 
-function Story() {
+function Story({ locked }: { locked: boolean }) {
   return (
-    <main className="story">
+    <main className="story" inert={locked}>
       <div className="story-grain" aria-hidden="true" />
       {events.map((event) => (
         <EventCard event={event} key={event.id} />
@@ -403,22 +466,33 @@ export default function Home() {
       <div
         aria-label="Wedding invitation sections"
         className="invitation-scroller"
+        data-locked={announced ? undefined : "true"}
         ref={scrollerRef}
         role="region"
         tabIndex={0}
       >
         <WeddingOpening onAnnouncement={unlockStory} />
-        <Story />
+        <Story locked={!announced} />
       </div>
-      {announced && nextStop && (
-        <button
-          className="journey-next-button sticky-details"
-          onClick={showNextDetails}
-          type="button"
-        >
-          KEEP SCROLLING <span aria-hidden="true">↓</span>
-        </button>
-      )}
+      <AnimatePresence>
+        {announced && nextStop && (
+          <motion.button
+            className="journey-next-button sticky-details"
+            initial={{ opacity: 0, y: reducedMotion ? 0 : 18 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: reducedMotion ? 0 : 12 }}
+            transition={{ duration: reducedMotion ? 0 : 0.5, ease: [0.22, 1, 0.36, 1] }}
+            onClick={showNextDetails}
+            type="button"
+          >
+            <span className="journey-next-rule" aria-hidden="true" />
+            <span className="journey-next-text">{nextStop.label}</span>
+            <span className="journey-next-chevron" aria-hidden="true">
+              ↓
+            </span>
+          </motion.button>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

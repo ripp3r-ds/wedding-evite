@@ -39,9 +39,9 @@ function CountdownUnit({
           <motion.span
             key={value ?? "waiting"}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: reducedMotion ? 0 : -8 }}
-            initial={{ opacity: 0, y: reducedMotion ? 0 : 8 }}
-            transition={{ duration: reducedMotion ? 0 : 0.22 }}
+            exit={{ opacity: 0, y: reducedMotion ? 0 : -10 }}
+            initial={{ opacity: 0, y: reducedMotion ? 0 : 10 }}
+            transition={{ duration: reducedMotion ? 0 : 0.26 }}
           >
             {value === null ? "—" : String(value).padStart(2, "0")}
           </motion.span>
@@ -69,17 +69,17 @@ export function Countdown({ variant = "story" }: { variant?: "story" | "journey"
       aria-label="Countdown to the wedding on October 29, 2026 at 10:30 PM India time"
       className={`countdown countdown-${variant}`}
     >
-      <p className="countdown-kicker">UNTIL WE CELEBRATE TOGETHER</p>
+      <p className="countdown-kicker">UNTIL THE MUHURTHAM</p>
       <div className="countdown-clock">
         <CountdownUnit label="Days" value={timeLeft?.days ?? null} reducedMotion={reducedMotion} />
-        <span className="countdown-separator" aria-hidden="true">·</span>
+        <span className="countdown-separator" aria-hidden="true">❖</span>
         <CountdownUnit label="Hours" value={timeLeft?.hours ?? null} reducedMotion={reducedMotion} />
-        <span className="countdown-separator" aria-hidden="true">·</span>
+        <span className="countdown-separator" aria-hidden="true">❖</span>
         <CountdownUnit label="Minutes" value={timeLeft?.minutes ?? null} reducedMotion={reducedMotion} />
-        <span className="countdown-separator" aria-hidden="true">·</span>
+        <span className="countdown-separator" aria-hidden="true">❖</span>
         <CountdownUnit label="Seconds" value={timeLeft?.seconds ?? null} reducedMotion={reducedMotion} />
       </div>
-      <p className="countdown-date">29 October 2026 <span>·</span> 10:30 PM IST</p>
+      <p className="countdown-date">10:30 PM IST <span>·</span> Hyderabad</p>
     </section>
   );
 }
