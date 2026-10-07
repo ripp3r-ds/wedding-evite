@@ -1,116 +1,81 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { motion, useReducedMotion } from "framer-motion";
+import { useCallback, useEffect, useState } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { Countdown } from "./countdown";
 import { ScratchReveal } from "./scratch-reveal";
 import { WeddingPortrait } from "./wedding-portrait";
+import { WaxSeal } from "./wax-seal";
+import {
+  FrameCorners,
+  GoldDust,
+  KalashamMark,
+  MandalaBackdrop,
+  OrnamentDivider
+} from "./royal-ornaments";
 
-type GateStage = "closed" | "opening" | "open";
+// "announcing" carries the names, the background portrait and the scratch card
+// together, so the card arrives with the reveal rather than after it.
+type Act = "sealed" | "unsealing" | "announcing" | "revealed";
 
-function BananaStem({ side }: { side: "left" | "right" }) {
+const EASE = [0.22, 1, 0.36, 1] as const;
+
+const riseIn = {
+  hidden: { opacity: 0, y: 14, filter: "blur(6px)" },
+  shown: {
+    opacity: 1,
+    y: 0,
+    filter: "blur(0px)",
+    transition: { duration: 0.85, ease: EASE }
+  }
+};
+
+function PaperFlap({
+  side,
+  open,
+  reducedMotion
+}: {
+  side: "left" | "right";
+  open: boolean;
+  reducedMotion: boolean;
+}) {
+  const direction = side === "left" ? -1 : 1;
+
   return (
-    <svg
+    <motion.div
       aria-hidden="true"
-      className={`banana-stem banana-stem-${side}`}
-      viewBox="0 0 72 420"
-      fill="none"
+      className={`paper-flap paper-flap-${side}`}
+      animate={
+        open
+          ? reducedMotion
+            ? { opacity: 0 }
+            : { rotateY: direction * 118, z: 60, opacity: 0 }
+          : { rotateY: 0, z: 0, opacity: 1 }
+      }
+      transition={
+        open
+          ? reducedMotion
+            ? { duration: 0.25 }
+            : {
+                // The far door lags so the card unfolds rather than splitting.
+                rotateY: {
+                  duration: 1.45,
+                  ease: EASE,
+                  delay: side === "left" ? 0.06 : 0.18
+                },
+                z: { duration: 1.45, ease: EASE },
+                opacity: {
+                  delay: side === "left" ? 0.72 : 0.85,
+                  duration: 0.5,
+                  ease: "easeOut"
+                }
+              }
+          : { duration: 0.3 }
+      }
     >
-      <path
-        d="M36 12c4 38 6 90 5 140-1 62-6 118-4 168 1 28 6 58 14 88"
-        stroke="#3f4a1c"
-        strokeWidth="7"
-        strokeLinecap="round"
-      />
-      <path
-        d="M36 12c4 38 6 90 5 140-1 62-6 118-4 168"
-        stroke="#7d9333"
-        strokeWidth="4"
-        strokeLinecap="round"
-      />
-      {[48, 92, 138, 186, 236, 286].map((y, index) => {
-        const flip = side === "left" ? 1 : -1;
-        const dir = (index % 2 === 0 ? -1 : 1) * flip;
-        return (
-          <path
-            key={y}
-            d={`M36 ${y}c${18 * dir} 8 ${34 * dir} 6 ${40 * dir} -6 ${8 * dir} -16 ${2 * dir} -32 -12 ${-28}`}
-            fill={index % 2 ? "#6f872c" : "#8aa63a"}
-            stroke="#3f4a1c"
-            strokeWidth="1.2"
-          />
-        );
-      })}
-    </svg>
-  );
-}
-
-function HangingLamp({ delay }: { delay: string }) {
-  return (
-    <span className="vilakku" style={{ animationDelay: delay }}>
-      <span className="vilakku-chain" />
-      <span className="vilakku-bowl" />
-      <span className="vilakku-flame" />
-    </span>
-  );
-}
-
-function Toran() {
-  return (
-    <div className="toran" aria-hidden="true">
-      {Array.from({ length: 13 }, (_, index) => (
-        <span
-          className={`toran-leaf${index % 2 ? " toran-leaf-alt" : ""}`}
-          key={index}
-        />
-      ))}
-    </div>
-  );
-}
-
-function Gopuram() {
-  return (
-    <svg aria-hidden="true" className="gopuram" viewBox="0 0 360 118" fill="none">
-      <path d="M28 114h304" stroke="#e8c36a" strokeWidth="3" />
-      <path d="M48 114 80 78h200l32 36" fill="#7a2b32" stroke="#e8c36a" strokeWidth="2" />
-      <path d="M92 78 118 48h124l26 30" fill="#8e353c" stroke="#f0d48d" strokeWidth="2" />
-      <path d="M130 48 154 24h52l24 24" fill="#a2434a" stroke="#f0d48d" strokeWidth="2" />
-      <path d="M168 24 180 8h0l12 16" fill="#c9a24a" stroke="#fff1c2" strokeWidth="1.6" />
-      <circle cx="180" cy="7" r="5" fill="#f3d98a" />
-      <path d="M70 96h220M108 66h144M142 38h76" stroke="#f0d48d" strokeWidth="1" opacity=".7" />
-      {[90, 130, 170, 210, 250].map((x) => (
-        <rect key={x} x={x} y="84" width="10" height="16" rx="1" fill="#f3d48a" opacity=".85" />
-      ))}
-    </svg>
-  );
-}
-
-function Kolam() {
-  return (
-    <svg aria-hidden="true" className="kolam" viewBox="0 0 160 46" fill="none">
-      <ellipse cx="80" cy="23" rx="70" ry="12" stroke="#e8c36a" strokeWidth="1.2" />
-      <ellipse cx="80" cy="23" rx="44" ry="7" stroke="#f3d98a" strokeWidth="1" />
-      {[20, 40, 60, 80, 100, 120, 140].map((x) => (
-        <circle key={x} cx={x} cy="23" r="2.1" fill="#f6e2a6" />
-      ))}
-    </svg>
-  );
-}
-
-function DoorCarving() {
-  return (
-    <svg aria-hidden="true" className="door-carving" viewBox="0 0 120 240" fill="none">
-      <rect x="10" y="10" width="100" height="220" rx="4" stroke="#e8c36a" strokeWidth="2" />
-      <rect x="22" y="22" width="76" height="196" rx="3" stroke="#f0d48d" strokeWidth="1" />
-      <circle cx="60" cy="88" r="22" stroke="#f3d98a" strokeWidth="1.4" />
-      <path
-        d="M60 70c6 8 12 12 18 14-6 4-12 10-18 18-6-8-12-14-18-18 6-2 12-6 18-14Z"
-        fill="#c9a24a"
-        opacity=".9"
-      />
-      <path d="M38 150h44M38 168h44M38 186h44" stroke="#e8c36a" strokeWidth="1.2" />
-      <circle cx="98" cy="128" r="5" fill="#f0d48d" />
-    </svg>
+      <span className="paper-flap-face" />
+      <span className="paper-flap-edge" />
+    </motion.div>
   );
 }
 
@@ -119,156 +84,205 @@ export function WeddingOpening({
 }: {
   onAnnouncement: () => void;
 }) {
-  const [gate, setGate] = useState<GateStage>("closed");
-  const [revealed, setRevealed] = useState(false);
+  const [act, setAct] = useState<Act>("sealed");
+  // Held back until the scratch panel has finished exiting. Mounting the
+  // portrait and countdown while it is still occupying space makes the whole
+  // stage squeeze and snap back.
+  const [heroReady, setHeroReady] = useState(false);
   const reducedMotion = useReducedMotion();
-  const opened = gate !== "closed";
+  const reduced = Boolean(reducedMotion);
+
+  const flapsOpen = act !== "sealed";
+  const photoVisible = act === "announcing" || act === "revealed";
+  const revealed = act === "revealed";
 
   useEffect(() => {
-    if (gate !== "opening") return;
+    if (act !== "unsealing") return;
+    // Short enough that the announcement starts rising while the doors are
+    // still swinging; any longer and the stage sits empty after the tap.
     const timeout = window.setTimeout(
-      () => setGate("open"),
-      reducedMotion ? 180 : 1_150
+      () => setAct("announcing"),
+      reduced ? 200 : 820
     );
     return () => window.clearTimeout(timeout);
-  }, [gate, reducedMotion]);
+  }, [act, reduced]);
 
   useEffect(() => {
-    if (gate === "open") {
-      onAnnouncement();
-    }
-  }, [gate, onAnnouncement]);
+    if (act === "revealed") onAnnouncement();
+  }, [act, onAnnouncement]);
 
-  function handleReveal() {
-    if (revealed) return;
-    setRevealed(true);
-  }
+  useEffect(() => {
+    if (act !== "revealed") return;
+    const timeout = window.setTimeout(
+      () => setHeroReady(true),
+      reduced ? 0 : 700
+    );
+    return () => window.clearTimeout(timeout);
+  }, [act, reduced]);
+
+  const handleScratched = useCallback(() => {
+    window.setTimeout(() => setAct("revealed"), reduced ? 0 : 780);
+  }, [reduced]);
 
   return (
     <section
       aria-label="Wedding invitation"
-      className={`journey-screen mandapam-screen${opened ? " is-open" : ""}${revealed ? " is-revealed" : ""}`}
+      className="landing"
+      data-act={act}
       id="opening"
     >
-      <div className="mandapam-courtyard" aria-hidden="true" />
-      <BananaStem side="left" />
-      <BananaStem side="right" />
+      <div className="landing-sky" aria-hidden="true" />
+      <MandalaBackdrop />
+      <GoldDust count={reduced ? 0 : 18} />
 
-      <div className="mandapam-stage">
-        <Gopuram />
-        <Toran />
-        <div className="vilakku-row" aria-hidden="true">
-          <HangingLamp delay="0s" />
-          <HangingLamp delay=".4s" />
-          <HangingLamp delay=".8s" />
-          <HangingLamp delay=".2s" />
-        </div>
+      <motion.div
+        aria-hidden="true"
+        className="landing-photo"
+        animate={{
+          opacity: photoVisible ? (revealed ? 0.16 : 0.42) : 0,
+          scale: revealed ? 1.1 : 1
+        }}
+        transition={{ duration: reduced ? 0.25 : 1.35, ease: "easeOut" }}
+      >
+        <WeddingPortrait
+          alt=""
+          float={false}
+          objectPosition="50% 20%"
+          preload
+          scene="opening"
+          sizes="100vw"
+          variant="bleed"
+        />
+      </motion.div>
 
-        <div className="sanctum" style={{ perspective: reducedMotion ? undefined : 1200 }}>
-          <span className="sanctum-pillar sanctum-pillar-left" aria-hidden="true" />
-          <span className="sanctum-pillar sanctum-pillar-right" aria-hidden="true" />
+      <div className="landing-frame">
+        <FrameCorners />
 
-          <div className="sanctum-inner">
-            <ScratchReveal
-              active={gate === "open"}
-              autoReveal={Boolean(reducedMotion)}
-              onRevealed={handleReveal}
+        <PaperFlap side="left" open={flapsOpen} reducedMotion={reduced} />
+        <PaperFlap side="right" open={flapsOpen} reducedMotion={reduced} />
+
+        <div className="landing-stage">
+          <AnimatePresence>
+            {act === "sealed" ? (
+              <motion.div
+                className="landing-seal-slot"
+                key="seal"
+                initial={false}
+                exit={
+                  reduced
+                    ? { opacity: 0 }
+                    : { opacity: 0, scale: 0.92, filter: "blur(5px)" }
+                }
+                transition={{ duration: reduced ? 0.2 : 0.42, ease: EASE }}
+              >
+                <KalashamMark className="landing-crest" />
+                <span className="landing-telugu-crest">శుభలేఖ</span>
+                <span className="landing-invited">You are invited</span>
+                <WaxSeal opened={flapsOpen} onOpen={() => setAct("unsealing")} />
+                <span className="landing-seal-hint">tap the seal</span>
+              </motion.div>
+            ) : null}
+          </AnimatePresence>
+
+          {heroReady && (
+            <motion.div
+              className="landing-hero-portrait"
+              initial={reduced ? false : { opacity: 0, y: 26 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: reduced ? 0 : 1.15, ease: EASE }}
             >
               <WeddingPortrait
                 alt="Rithwik and Kalyani"
-                className="sanctum-portrait"
-                objectPosition="50% 18%"
+                objectPosition="50% 0%"
                 preload
                 scene="opening"
+                sizes="(max-width: 640px) 86vw, 320px"
+                variant="oval"
+                zoom={1.85}
               />
-            </ScratchReveal>
-          </div>
+            </motion.div>
+          )}
 
-          <motion.div
-            aria-hidden="true"
-            className="mandapam-curtain mandapam-curtain-left"
-            animate={
-              opened
-                ? { x: reducedMotion ? "-100%" : "-108%", opacity: reducedMotion ? 0 : 1 }
-                : { x: 0, opacity: 1 }
-            }
-            transition={{ duration: reducedMotion ? 0.25 : 1.05, ease: [0.22, 1, 0.36, 1] }}
-          />
-          <motion.div
-            aria-hidden="true"
-            className="mandapam-curtain mandapam-curtain-right"
-            animate={
-              opened
-                ? { x: reducedMotion ? "100%" : "108%", opacity: reducedMotion ? 0 : 1 }
-                : { x: 0, opacity: 1 }
-            }
-            transition={{ duration: reducedMotion ? 0.25 : 1.05, ease: [0.22, 1, 0.36, 1] }}
-          />
-          <motion.div
-            aria-hidden="true"
-            className="mandapam-door mandapam-door-left"
-            animate={
-              opened
-                ? reducedMotion
-                  ? { opacity: 0 }
-                  : { rotateY: -102, opacity: 1 }
-                : { rotateY: 0, opacity: 1 }
-            }
-            transition={{ duration: reducedMotion ? 0.2 : 1.1, ease: [0.22, 1, 0.36, 1] }}
-          >
-            <DoorCarving />
-          </motion.div>
-          <motion.div
-            aria-hidden="true"
-            className="mandapam-door mandapam-door-right"
-            animate={
-              opened
-                ? reducedMotion
-                  ? { opacity: 0 }
-                  : { rotateY: 102, opacity: 1 }
-                : { rotateY: 0, opacity: 1 }
-            }
-            transition={{
-              duration: reducedMotion ? 0.2 : 1.1,
-              delay: reducedMotion ? 0 : 0.05,
-              ease: [0.22, 1, 0.36, 1]
-            }}
-          >
-            <DoorCarving />
-          </motion.div>
+          {photoVisible && (
+            <motion.div
+              className="announcement"
+              initial={reduced ? false : "hidden"}
+              animate={reduced ? undefined : "shown"}
+              variants={{
+                hidden: {},
+                shown: { transition: { staggerChildren: 0.2, delayChildren: 0.04 } }
+              }}
+            >
+              <motion.span className="announcement-kicker" variants={riseIn}>
+                WE&apos;RE GETTING MARRIED
+              </motion.span>
+              <motion.h1 className="announcement-names" variants={riseIn}>
+                Rithwik <i>&amp;</i> Kalyani
+              </motion.h1>
+              <motion.div variants={riseIn}>
+                <OrnamentDivider className="announcement-rule" />
+              </motion.div>
+              <motion.p className="announcement-blessing" variants={riseIn}>
+                With the blessings of our elders, and of everyone who got us here
+              </motion.p>
+            </motion.div>
+          )}
+
+          <AnimatePresence mode="wait">
+            {act === "announcing" && (
+              <motion.div
+                className="scratch-slot"
+                key="scratch"
+                initial={reduced ? false : { opacity: 0, y: 16, scale: 0.97 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={reduced ? { opacity: 0 } : { opacity: 0, y: -14, scale: 0.97 }}
+                transition={{ duration: reduced ? 0.2 : 0.55, ease: EASE }}
+              >
+                <ScratchReveal
+                  active
+                  autoReveal={reduced}
+                  onRevealed={handleScratched}
+                />
+              </motion.div>
+            )}
+
+            {revealed && (
+              <motion.div
+                className="date-hero"
+                key="date"
+                initial={reduced ? false : { opacity: 0, scale: 0.72, y: 24 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                transition={
+                  reduced
+                    ? { duration: 0 }
+                    : { type: "spring", stiffness: 120, damping: 14, mass: 1.05 }
+                }
+              >
+                <span className="date-hero-label">SAVE THE DATE</span>
+                <time className="date-hero-date" dateTime="2026-10-29">
+                  <span className="date-hero-day">29</span>
+                  <span className="date-hero-rest">
+                    <span className="date-hero-month">OCTOBER</span>
+                    <span className="date-hero-year">2026</span>
+                  </span>
+                </time>
+                <span className="date-hero-telugu">వివాహ శుభముహూర్తం</span>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {heroReady && (
+            <motion.div
+              className="landing-countdown"
+              initial={reduced ? false : { opacity: 0, y: 18 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: reduced ? 0 : 0.85, delay: reduced ? 0 : 0.3 }}
+            >
+              <Countdown variant="journey" />
+            </motion.div>
+          )}
         </div>
-
-        <Kolam />
-
-        <motion.div
-          className="mandapam-open-wrap"
-          animate={{ opacity: opened ? 0 : 1 }}
-          transition={{ duration: reducedMotion ? 0 : 0.3 }}
-          style={{ pointerEvents: opened ? "none" : "auto" }}
-        >
-          <motion.button
-            className="mandapam-open-button"
-            type="button"
-            onClick={() => setGate("opening")}
-            disabled={opened}
-            whileTap={reducedMotion || opened ? undefined : { scale: 0.96 }}
-          >
-            <span className="kolam-ring" aria-hidden="true" />
-            TAP TO OPEN
-          </motion.button>
-        </motion.div>
       </div>
-
-      {revealed && (
-        <motion.div
-          className="mandapam-countdown"
-          initial={{ opacity: 0, y: reducedMotion ? 0 : 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: reducedMotion ? 0 : 0.45 }}
-        >
-          <Countdown variant="journey" />
-        </motion.div>
-      )}
     </section>
   );
 }
