@@ -133,15 +133,20 @@ export function WeddingOpening({
     return () => window.clearTimeout(timeout);
   }, [gate, reducedMotion]);
 
+  useEffect(() => {
+    if (gate === "open") {
+      onAnnouncement();
+    }
+  }, [gate, onAnnouncement]);
+
   function handleReveal() {
     if (revealed) return;
     setRevealed(true);
-    onAnnouncement();
   }
 
   return (
     <section
-      aria-label="Wedding invitation mandapam"
+      aria-label="Wedding invitation"
       className={`journey-screen mandapam-screen${opened ? " is-open" : ""}${revealed ? " is-revealed" : ""}`}
       id="opening"
     >
@@ -249,7 +254,7 @@ export function WeddingOpening({
             whileTap={reducedMotion || opened ? undefined : { scale: 0.96 }}
           >
             <span className="kolam-ring" aria-hidden="true" />
-            Open the mandapam
+            TAP TO OPEN
           </motion.button>
         </motion.div>
       </div>

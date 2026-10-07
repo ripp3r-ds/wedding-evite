@@ -147,18 +147,25 @@ export function ScratchReveal({
   return (
     <div className={`scratch-card${scratched ? " is-scratched" : ""}`}>
       <div className="scratch-photo-frame">{children}</div>
+
+      <div className="opening-announcement" aria-live="polite">
+        <span className="opening-kicker">WE&apos;RE GETTING MARRIED</span>
+        <h1 className="opening-names">
+          Rithwik <i>&amp;</i> Kalyani
+        </h1>
+        <p className="opening-subtitle">With the blessings of our families</p>
+      </div>
+
       <div
         className="scratch-date-reveal"
         aria-live="polite"
         aria-hidden={!scratched}
-        aria-label="Rithwik and Kalyani are getting married on October 29, 2026"
+        aria-label="The wedding dates are 28, 29 and 30 October 2026"
       >
-        <span className="scratch-couple-names">
-          Rithwik <i>&amp;</i> Kalyani
-        </span>
-        <strong>are getting married</strong>
-        <time dateTime="2026-10-29">October 29</time>
+        <span className="scratch-panel-label">SCRATCH TO REVEAL OUR DATES</span>
+        <time dateTime="2026-10-28">28 · 29 · 30 OCTOBER 2026</time>
       </div>
+
       <canvas
         ref={canvasRef}
         aria-label="Scratch to reveal"
@@ -185,7 +192,7 @@ export function ScratchReveal({
       />
       {active && !scratched && (
         <div className="scratch-prompt" aria-hidden="true">
-          <span>Scratch to reveal</span>
+          <span>Now, a little reveal...</span>
         </div>
       )}
     </div>
