@@ -184,11 +184,12 @@ export function WaxSeal({
                 reducedMotion
                   ? { duration: 0.25 }
                   : {
-                      duration: 1.45,
+                      duration: 1.05,
                       ease: [0.2, 0.9, 0.3, 1],
                       // The wax parts before it is carried off, so the fade
-                      // trails the travel rather than racing it.
-                      opacity: { duration: 0.9, delay: 0.55, ease: "easeIn" }
+                      // trails the travel rather than racing it. It finishes
+                      // just as the announcement begins rising underneath.
+                      opacity: { duration: 0.65, delay: 0.3, ease: "easeIn" }
                     }
               }
             >
