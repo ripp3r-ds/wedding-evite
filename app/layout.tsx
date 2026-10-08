@@ -48,12 +48,14 @@ const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://rithwikandkalyani.c
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: "Rithwik & Kalyani are getting married",
+  // The date is the thing the guest scratches off, so it must not appear in
+  // the link preview. Keep every shareable string free of it.
   description:
-    "29 October 2026, Hyderabad. Open the invitation for the haldi, the wedding and the reception, and tell us you're coming.",
+    "We've made a little invitation. Open it and come celebrate with us.",
   openGraph: {
     title: "Rithwik & Kalyani are getting married",
     description:
-      "29 October 2026, Hyderabad. Open the invitation and tell us you're coming.",
+      "We've made a little invitation. Open it and come celebrate with us.",
     type: "website",
     images: [
       {
