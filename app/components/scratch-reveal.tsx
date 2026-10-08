@@ -191,7 +191,6 @@ export function ScratchReveal({
   return (
     <div className={`scratch-card${scratched ? " is-scratched" : ""}`}>
       <div className="scratch-face" aria-live="polite">
-        <span className="scratch-face-label">THE MUHURTHAM</span>
         <time className="scratch-face-date" dateTime="2026-10-29">
           <span className="scratch-face-day">29</span>
           <span className="scratch-face-rest">
@@ -199,12 +198,11 @@ export function ScratchReveal({
             <span>2026</span>
           </span>
         </time>
-        <span className="scratch-face-telugu">శుభ ముహూర్తం</span>
       </div>
 
       <canvas
         ref={canvasRef}
-        aria-label="Scratch to reveal the wedding date"
+        aria-label="Scratch to reveal our wedding date"
         className="scratch-surface"
         role="button"
         tabIndex={active && !scratched ? 0 : -1}
@@ -230,7 +228,7 @@ export function ScratchReveal({
       {active && !scratched && !touched && (
         <div className="scratch-prompt" aria-hidden="true">
           <span className="scratch-prompt-coin" />
-          <span className="scratch-prompt-text">Scratch to uncover our date</span>
+          <span className="scratch-prompt-text">Scratch to reveal our wedding date</span>
         </div>
       )}
     </div>

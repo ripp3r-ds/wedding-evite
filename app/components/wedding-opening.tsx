@@ -6,12 +6,14 @@ import { Countdown } from "./countdown";
 import { ScratchReveal } from "./scratch-reveal";
 import { WeddingPortrait } from "./wedding-portrait";
 import { WaxSeal } from "./wax-seal";
+import { DiyaSprite } from "./celebration-artefacts";
 import {
   FrameCorners,
   GoldDust,
   KalashamMark,
-  MandalaBackdrop,
-  OrnamentDivider
+  MugguBackdrop,
+  OrnamentDivider,
+  ThoranamHalf
 } from "./royal-ornaments";
 
 // "announcing" carries the names, the background portrait and the scratch card
@@ -26,7 +28,7 @@ const riseIn = {
     opacity: 1,
     y: 0,
     filter: "blur(0px)",
-    transition: { duration: 0.85, ease: EASE }
+    transition: { duration: 1.35, ease: EASE }
   }
 };
 
@@ -59,14 +61,14 @@ function PaperFlap({
             : {
                 // The far door lags so the card unfolds rather than splitting.
                 rotateY: {
-                  duration: 1.45,
+                  duration: 2.9,
                   ease: EASE,
-                  delay: side === "left" ? 0.06 : 0.18
+                  delay: side === "left" ? 0.12 : 0.34
                 },
-                z: { duration: 1.45, ease: EASE },
+                z: { duration: 2.9, ease: EASE },
                 opacity: {
-                  delay: side === "left" ? 0.72 : 0.85,
-                  duration: 0.5,
+                  delay: side === "left" ? 1.55 : 1.8,
+                  duration: 0.95,
                   ease: "easeOut"
                 }
               }
@@ -93,16 +95,18 @@ export function WeddingOpening({
   const reduced = Boolean(reducedMotion);
 
   const flapsOpen = act !== "sealed";
-  const photoVisible = act === "announcing" || act === "revealed";
+  const announced = act === "announcing" || act === "revealed";
   const revealed = act === "revealed";
 
   useEffect(() => {
     if (act !== "unsealing") return;
-    // Short enough that the announcement starts rising while the doors are
-    // still swinging; any longer and the stage sits empty after the tap.
+    // Pinned to roughly half the door duration (~2.9s), so the announcement
+    // starts rising while the doors are still swinging. This ratio is what
+    // keeps the stage from sitting empty after the tap; if the swing is
+    // retimed, move this with it rather than on its own.
     const timeout = window.setTimeout(
       () => setAct("announcing"),
-      reduced ? 200 : 820
+      reduced ? 200 : 1480
     );
     return () => window.clearTimeout(timeout);
   }, [act, reduced]);
@@ -115,13 +119,15 @@ export function WeddingOpening({
     if (act !== "revealed") return;
     const timeout = window.setTimeout(
       () => setHeroReady(true),
-      reduced ? 0 : 700
+      reduced ? 0 : 1250
     );
     return () => window.clearTimeout(timeout);
   }, [act, reduced]);
 
+  // Long enough to read the date you just uncovered, short enough that the
+  // spent card does not sit there waiting to be cleared.
   const handleScratched = useCallback(() => {
-    window.setTimeout(() => setAct("revealed"), reduced ? 0 : 780);
+    window.setTimeout(() => setAct("revealed"), reduced ? 0 : 620);
   }, [reduced]);
 
   return (
@@ -132,34 +138,93 @@ export function WeddingOpening({
       id="opening"
     >
       <div className="landing-sky" aria-hidden="true" />
-      <MandalaBackdrop />
       <GoldDust count={reduced ? 0 : 18} />
 
-      <motion.div
-        aria-hidden="true"
-        className="landing-photo"
-        animate={{
-          opacity: photoVisible ? (revealed ? 0.16 : 0.42) : 0,
-          scale: revealed ? 1.1 : 1
-        }}
-        transition={{ duration: reduced ? 0.25 : 1.35, ease: "easeOut" }}
-      >
-        <WeddingPortrait
-          alt=""
-          float={false}
-          objectPosition="50% 20%"
-          preload
-          scene="opening"
-          sizes="100vw"
-          variant="bleed"
-        />
-      </motion.div>
+      {/* Two brass diyas at the threshold, the way a Telugu home is lit for
+          guests. Siblings of the frame and stacked above it, so the card's
+          paper board cannot dim them. */}
+      <div className="landing-diyas" aria-hidden="true">
+        <span className="landing-diya landing-diya-left">
+          <DiyaSprite />
+        </span>
+        <span className="landing-diya landing-diya-right">
+          <DiyaSprite />
+        </span>
+      </div>
 
       <div className="landing-frame">
         <FrameCorners />
 
+        {/* The couple behind the announcement and the scratch card. It is gone
+            by "revealed", where the hero oval takes over, so the two portrait
+            treatments never share the screen. */}
+        {announced && (
+          <motion.div
+            aria-hidden="true"
+            className="landing-photo"
+            initial={reduced ? false : { opacity: 0, scale: 1.06 }}
+            animate={{ opacity: revealed ? 0 : 0.92, scale: revealed ? 1.1 : 1 }}
+            transition={{ duration: reduced ? 0.25 : 1.7, ease: "easeOut" }}
+          >
+            <WeddingPortrait
+              alt=""
+              float={false}
+              objectPosition="50% 18%"
+              preload
+              scene="opening"
+              sizes="100vw"
+              variant="bleed"
+            />
+          </motion.div>
+        )}
+
+        {/* Inside the frame, so the muggu reads as printed on the card stock
+            rather than as wallpaper showing through behind it. */}
+        <MugguBackdrop />
+
         <PaperFlap side="left" open={flapsOpen} reducedMotion={reduced} />
         <PaperFlap side="right" open={flapsOpen} reducedMotion={reduced} />
+
+        {/* Mango toranam across the head of the card. It is strung on the same
+            cord as the seal, so when the seal cracks the string parts at the
+            centre and both halves swing out of frame with the doors. */}
+        <div className="landing-thoranam" aria-hidden="true">
+          {(["left", "right"] as const).map((side) => (
+            <motion.span
+              className={`thoranam-half thoranam-half-${side}`}
+              key={side}
+              animate={
+                flapsOpen
+                  ? reduced
+                    ? { opacity: 0 }
+                    : {
+                        rotate: side === "left" ? -15 : 15,
+                        x: side === "left" ? -14 : 14,
+                        y: -10,
+                        opacity: 0
+                      }
+                  : { rotate: 0, x: 0, y: 0, opacity: 1 }
+              }
+              transition={
+                flapsOpen
+                  ? reduced
+                    ? { duration: 0.3 }
+                    : {
+                        // Snaps open quickly, then rides out with the doors:
+                        // the travel tracks the 2.9s swing, and the fade is
+                        // held back so the break is actually watched.
+                        rotate: { duration: 2.6, ease: [0.16, 1, 0.3, 1] },
+                        x: { duration: 2.6, ease: [0.16, 1, 0.3, 1] },
+                        y: { duration: 2.6, ease: [0.16, 1, 0.3, 1] },
+                        opacity: { duration: 1.3, delay: 1.2, ease: "easeOut" }
+                      }
+                  : { duration: 0.3 }
+              }
+            >
+              <ThoranamHalf side={side} />
+            </motion.span>
+          ))}
+        </div>
 
         <div className="landing-stage">
           <AnimatePresence>
@@ -168,18 +233,46 @@ export function WeddingOpening({
                 className="landing-seal-slot"
                 key="seal"
                 initial={false}
-                exit={
+                // A late, gentle fade only. No blur or scale here: this element
+                // carries the wax shards, and blurring it would smear the break
+                // the guest just triggered. The delay outlasts the shard
+                // flight so they are gone before the slot clears.
+                exit={{ opacity: 0 }}
+                // Ends at 1.42s, just inside the shards' 1.45s flight, so the
+                // slot unmounts at ~1.45s and is out of the stage's flex column
+                // before "announcing" mounts the names at 1.48s. Overlapping
+                // the two squeezes the stage and snaps it back.
+                transition={
                   reduced
-                    ? { opacity: 0 }
-                    : { opacity: 0, scale: 0.92, filter: "blur(5px)" }
+                    ? { duration: 0.2 }
+                    : { duration: 0.5, delay: 0.92, ease: EASE }
                 }
-                transition={{ duration: reduced ? 0.2 : 0.42, ease: EASE }}
               >
-                <KalashamMark className="landing-crest" />
-                <span className="landing-telugu-crest">శుభలేఖ</span>
-                <span className="landing-invited">You are invited</span>
+                {/* The lettering leaves on its own, quickly, so it does not sit
+                    on screen while the seal is still breaking. */}
+                <motion.div
+                  className="landing-seal-words"
+                  exit={
+                    reduced
+                      ? { opacity: 0 }
+                      : { opacity: 0, y: -12, filter: "blur(5px)" }
+                  }
+                  transition={{ duration: reduced ? 0.2 : 0.6, ease: EASE }}
+                >
+                  <KalashamMark className="landing-crest" />
+                  <span className="landing-telugu-crest">శుభలేఖ</span>
+                  <span className="landing-invited">You are invited</span>
+                </motion.div>
+
                 <WaxSeal opened={flapsOpen} onOpen={() => setAct("unsealing")} />
-                <span className="landing-seal-hint">tap the seal</span>
+
+                <motion.span
+                  className="landing-seal-hint"
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: reduced ? 0.2 : 0.35, ease: "easeOut" }}
+                >
+                  tap the seal
+                </motion.span>
               </motion.div>
             ) : null}
           </AnimatePresence>
@@ -189,7 +282,7 @@ export function WeddingOpening({
               className="landing-hero-portrait"
               initial={reduced ? false : { opacity: 0, y: 26 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: reduced ? 0 : 1.15, ease: EASE }}
+              transition={{ duration: reduced ? 0 : 1.9, ease: EASE }}
             >
               <WeddingPortrait
                 alt="Rithwik and Kalyani"
@@ -203,14 +296,14 @@ export function WeddingOpening({
             </motion.div>
           )}
 
-          {photoVisible && (
+          {announced && (
             <motion.div
               className="announcement"
               initial={reduced ? false : "hidden"}
               animate={reduced ? undefined : "shown"}
               variants={{
                 hidden: {},
-                shown: { transition: { staggerChildren: 0.2, delayChildren: 0.04 } }
+                shown: { transition: { staggerChildren: 0.38, delayChildren: 0.16 } }
               }}
             >
               <motion.span className="announcement-kicker" variants={riseIn}>
@@ -223,7 +316,7 @@ export function WeddingOpening({
                 <OrnamentDivider className="announcement-rule" />
               </motion.div>
               <motion.p className="announcement-blessing" variants={riseIn}>
-                With the blessings of our elders, and of everyone who got us here
+                With the blessings of our families and elders
               </motion.p>
             </motion.div>
           )}
@@ -235,8 +328,13 @@ export function WeddingOpening({
                 key="scratch"
                 initial={reduced ? false : { opacity: 0, y: 16, scale: 0.97 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={reduced ? { opacity: 0 } : { opacity: 0, y: -14, scale: 0.97 }}
-                transition={{ duration: reduced ? 0.2 : 0.55, ease: EASE }}
+                // Shrinks away in place, like the spent foil being lifted off,
+                // rather than sliding out as a card of its own.
+                exit={reduced ? { opacity: 0 } : { opacity: 0, scale: 0.92 }}
+                transition={{
+                  duration: reduced ? 0.2 : 0.62,
+                  ease: EASE
+                }}
               >
                 <ScratchReveal
                   active
@@ -250,12 +348,14 @@ export function WeddingOpening({
               <motion.div
                 className="date-hero"
                 key="date"
-                initial={reduced ? false : { opacity: 0, scale: 0.72, y: 24 }}
+                // Picks up close to full size so it reads as the same date
+                // settling into place, not a second card popping in.
+                initial={reduced ? false : { opacity: 0, scale: 0.9, y: 14 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 transition={
                   reduced
                     ? { duration: 0 }
-                    : { type: "spring", stiffness: 120, damping: 14, mass: 1.05 }
+                    : { type: "spring", stiffness: 58, damping: 18, mass: 1.15 }
                 }
               >
                 <span className="date-hero-label">SAVE THE DATE</span>
@@ -276,7 +376,7 @@ export function WeddingOpening({
               className="landing-countdown"
               initial={reduced ? false : { opacity: 0, y: 18 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: reduced ? 0 : 0.85, delay: reduced ? 0 : 0.3 }}
+              transition={{ duration: reduced ? 0 : 1.45, delay: reduced ? 0 : 0.7 }}
             >
               <Countdown variant="journey" />
             </motion.div>
