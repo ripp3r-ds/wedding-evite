@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 
 function SealMonogram() {
@@ -88,6 +89,13 @@ export function WaxSeal({
   onOpen: () => void;
 }) {
   const reducedMotion = useReducedMotion();
+  // The seal lives inside an AnimatePresence child that unmounts on the very
+  // tap that opens it, and AnimatePresence renders an exiting subtree from its
+  // cached element, so the `opened` prop never reaches this copy. Local state
+  // does still update, so the tap is tracked here and the break itself is
+  // driven by `exit`, which framer-motion propagates down to descendants.
+  const [tapped, setTapped] = useState(false);
+  const sealed = !(tapped || opened);
 
   return (
     <div className="seal-rig">
@@ -95,14 +103,13 @@ export function WaxSeal({
         className="seal-cord"
         aria-hidden="true"
         animate={
-          opened || reducedMotion
-            ? { rotate: 0, opacity: opened ? 0 : 1 }
-            : { rotate: [-1.6, 1.6, -1.6] }
+          sealed && !reducedMotion ? { rotate: [-1.6, 1.6, -1.6] } : { rotate: 0 }
         }
+        exit={reducedMotion ? { opacity: 0 } : { opacity: 0, y: -26, rotate: -7 }}
         transition={
-          opened || reducedMotion
-            ? { duration: 0.55, ease: "easeOut" }
-            : { duration: 5.2, repeat: Infinity, ease: "easeInOut" }
+          sealed && !reducedMotion
+            ? { duration: 5.2, repeat: Infinity, ease: "easeInOut" }
+            : { duration: reducedMotion ? 0.25 : 0.95, ease: "easeOut" }
         }
       >
         <svg viewBox="0 0 40 320" fill="none" preserveAspectRatio="none">
@@ -126,34 +133,70 @@ export function WaxSeal({
       <motion.button
         aria-label="Open the wedding invitation"
         className="wax-seal"
-        disabled={opened}
-        onClick={onOpen}
+        disabled={!sealed}
+        onClick={() => {
+          setTapped(true);
+          onOpen();
+        }}
         type="button"
+        // Once tapped the button holds still: the two shards carry the break,
+        // so moving the container as well would compound the travel.
         animate={
-          opened
-            ? reducedMotion
-              ? { opacity: 0 }
-              : { y: -170, rotate: -26, scale: 0.68, opacity: 0 }
-            : reducedMotion
-              ? { scale: 1, rotate: 0, y: 0, opacity: 1 }
-              : { scale: [1, 1.055, 1], rotate: [-2.4, 2.4, -2.4], y: 0, opacity: 1 }
+          sealed && !reducedMotion
+            ? { scale: [1, 1.055, 1], rotate: [-2.4, 2.4, -2.4] }
+            : { scale: 1, rotate: 0 }
         }
         transition={
-          opened
-            ? { duration: reducedMotion ? 0.25 : 0.95, ease: [0.3, 0.9, 0.3, 1] }
-            : reducedMotion
-              ? { duration: 0.2 }
-              : {
-                  scale: { duration: 2.3, repeat: Infinity, ease: "easeInOut" },
-                  rotate: { duration: 5.2, repeat: Infinity, ease: "easeInOut" }
-                }
+          sealed && !reducedMotion
+            ? {
+                scale: { duration: 2.3, repeat: Infinity, ease: "easeInOut" },
+                rotate: { duration: 5.2, repeat: Infinity, ease: "easeInOut" }
+              }
+            : { duration: 0.2 }
         }
-        whileTap={opened || reducedMotion ? undefined : { scale: 0.93 }}
+        whileTap={sealed && !reducedMotion ? { scale: 0.93 } : undefined}
       >
         <span className="seal-halo" aria-hidden="true" />
         <span className="seal-ripple" aria-hidden="true" />
         <span className="seal-ripple seal-ripple-late" aria-hidden="true" />
-        <SealMonogram />
+
+        {/* The seal is two clipped copies of the same stamp, split down a
+            jagged centre line. Closed, they sit at rest and read as one whole
+            seal; opened, the wax cracks and the R and the K carry off to
+            opposite sides. */}
+        <span className="seal-shards" aria-hidden="true">
+          {(["left", "right"] as const).map((half) => (
+            <motion.span
+              className={`seal-shard seal-shard-${half}`}
+              key={half}
+              exit={
+                reducedMotion
+                  ? { opacity: 0 }
+                  : {
+                      x: half === "left" ? -62 : 62,
+                      y: half === "left" ? -156 : -134,
+                      rotate: half === "left" ? -34 : 30,
+                      scale: 0.78,
+                      opacity: 0
+                    }
+              }
+              transition={
+                reducedMotion
+                  ? { duration: 0.25 }
+                  : {
+                      duration: 1.45,
+                      ease: [0.2, 0.9, 0.3, 1],
+                      // The wax parts before it is carried off, so the fade
+                      // trails the travel rather than racing it.
+                      opacity: { duration: 0.9, delay: 0.55, ease: "easeIn" }
+                    }
+              }
+            >
+              <SealMonogram />
+            </motion.span>
+          ))}
+        </span>
+
         <span className="seal-glint" aria-hidden="true" />
       </motion.button>
     </div>

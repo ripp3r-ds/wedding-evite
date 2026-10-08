@@ -11,7 +11,11 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { WeddingOpening } from "./components/wedding-opening";
 import { WeddingPortrait } from "./components/wedding-portrait";
 import { CelebrationArtefacts, DiyaSprite } from "./components/celebration-artefacts";
-import { FrameCorners, OrnamentDivider } from "./components/royal-ornaments";
+import {
+  FrameCorners,
+  MugguBackdrop,
+  OrnamentDivider
+} from "./components/royal-ornaments";
 import { logRsvpInBackground, type RsvpSubmission } from "../lib/rsvp";
 
 const events = [
@@ -19,7 +23,7 @@ const events = [
     id: "haldi",
     number: "I",
     title: "Rithwik's Haldi",
-    telugu: "హల్దీ",
+    telugu: "మంగళ స్నానం",
     day: "28",
     month: "OCTOBER",
     year: "2026",
@@ -30,26 +34,26 @@ const events = [
     map: "https://maps.app.goo.gl/tnUscYRzi9mA4BR2A?g_st=ac",
     scene: "haldi",
     artefact: "marigold",
-    note: "Turmeric, marigolds, and cousins with far too many opinions, in the courtyard Rithwik grew up in.",
+    note: "Turmeric, marigolds, and cousins with far too many opinions.",
     aside: "",
     rsvpLabel: "Rithwik's Haldi"
   },
   {
     id: "wedding",
     number: "II",
-    title: "Wedding",
+    title: "The Wedding",
     telugu: "వివాహం",
     day: "29",
     month: "OCTOBER",
     year: "2026",
     weekday: "THURSDAY",
     date: "OCTOBER 29, 2026",
-    time: "10:00 PM",
+    time: "10:30 PM",
     place: "Amaravati Banquet Hall, LB Nagar, Hyderabad",
     map: "https://maps.app.goo.gl/vrtDszsCvD4BAuDq8?g_st=ac",
     scene: "wedding",
     artefact: "thalambralu",
-    note: "The muhurtham falls at 10:30 PM. Come early, and bring a steady hand for the thalambralu.",
+    note: "The muhurtham falls at 10:30 PM. Come early, the celebrations begin before it does.",
     aside: "",
     rsvpLabel: "Wedding"
   },
@@ -68,7 +72,7 @@ const events = [
     map: "https://maps.app.goo.gl/XMZRrdvo9hHRgTru7?g_st=ac",
     scene: "reception",
     artefact: "diya",
-    note: "Come say hello, stay for dinner, and let us feed you properly before the lamps go out.",
+    note: "Come say hello, stay for dinner, and let the evening linger a little longer.",
     aside: "",
     rsvpLabel: "Reception"
   }
@@ -147,11 +151,17 @@ function EventCard({
       data-scene={event.scene}
       id={event.id}
     >
+      {/* The wedding carries the strongest Telugu identity of the three, so it
+          is the only ceremony that gets the muggu behind it. */}
+      {event.scene === "wedding" ? (
+        <MugguBackdrop className="event-muggu" />
+      ) : null}
+
       <CelebrationArtefacts kind={event.artefact} seed={event.day.charCodeAt(1)} />
 
       <div className="event-portrait">
         <WeddingPortrait
-          alt={`Rithwik and Kalyani at the ${event.title.toLowerCase()}`}
+          alt={`Rithwik and Kalyani at the ${event.scene}`}
           objectPosition="50% 6%"
           scene={event.scene}
           sizes="(max-width: 640px) 72vw, 240px"
@@ -284,7 +294,7 @@ function RSVPForm() {
             <OrnamentDivider className="rsvp-rule" />
             <p>
               <span className="rsvp-telugu">మీ రాక కోసం ఎదురుచూస్తున్నాం</span>
-              Tell us which days you can make, so we can keep a plate warm.
+              Tell us which celebrations you can join.
             </p>
           </div>
 
@@ -295,14 +305,14 @@ function RSVPForm() {
                 autoComplete="name"
                 name="guestNames"
                 onChange={(event) => updateField("guestNames", event.target.value)}
-                placeholder="Your name, and your plus one"
+                placeholder="Name(s) of everyone attending"
                 required
                 value={form.guestNames}
               />
             </label>
 
             <fieldset className="attendance-fieldset">
-              <legend>Which celebrations can you join?</legend>
+              <legend>Mark the ones you&apos;ll be at</legend>
               {events.map((event) => (
                 <label className="attendance-option" key={event.id}>
                   <input
@@ -366,7 +376,7 @@ function RSVPForm() {
       </div>
       <footer className="story-footer">
         <OrnamentDivider className="footer-rule" />
-        <p>Come hungry, stay late, and dance badly with us.</p>
+        <p>Stay late, dance badly, and make it a night we all remember.</p>
         <small>RITHWIK &amp; KALYANI &middot; OCTOBER 2026</small>
       </footer>
     </motion.section>

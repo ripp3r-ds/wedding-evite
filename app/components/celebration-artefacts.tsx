@@ -36,7 +36,9 @@ const presets: Record<
 > = {
   marigold: { count: 20, size: [13, 30], duration: [7.5, 14], rises: false },
   thalambralu: { count: 28, size: [6, 13], duration: [5, 9.5], rises: false },
-  diya: { count: 14, size: [18, 34], duration: [11, 19], rises: true }
+  // Fewer, slower diyas: the reception should read contemporary rather than
+  // like a second wedding.
+  diya: { count: 8, size: [18, 32], duration: [13, 21], rises: true }
 };
 
 function MarigoldSprite({ tone }: { tone: number }) {
