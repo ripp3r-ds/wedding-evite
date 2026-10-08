@@ -1,16 +1,20 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { ReactNode, useCallback, useEffect, useRef, useState } from "react";
 
 const REVEAL_THRESHOLD = 0.3;
 
+// The foil is only a covering. Whatever is handed in as children is the panel
+// that stays on screen afterwards, so nothing is swapped out at the reveal.
 export function ScratchReveal({
   active,
   autoReveal,
+  children,
   onRevealed
 }: {
   active: boolean;
   autoReveal?: boolean;
+  children: ReactNode;
   onRevealed: () => void;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -191,17 +195,12 @@ export function ScratchReveal({
   return (
     <div className={`scratch-card${scratched ? " is-scratched" : ""}`}>
       <div className="scratch-face" aria-live="polite">
-        <time className="scratch-face-date" dateTime="2026-10-29">
-          <span className="scratch-face-day">29</span>
-          <span className="scratch-face-rest">
-            <span>OCTOBER</span>
-            <span>2026</span>
-          </span>
-        </time>
+        {children}
       </div>
 
       <canvas
         ref={canvasRef}
+        aria-hidden={!active || scratched}
         aria-label="Scratch to reveal our wedding date"
         className="scratch-surface"
         role="button"

@@ -35,6 +35,13 @@
   --font-telugu-stack: var(--font-telugu), "Noto Serif Telugu", "Nirmala UI", serif;
 
   --ease-silk: cubic-bezier(.22, 1, .36, 1);
+
+  /* One shared curve and duration for everything that changes height when the
+     date is uncovered, so the announcement settles as a single movement. */
+  --announce-collapse:
+    max-height .9s cubic-bezier(.22, 1, .36, 1),
+    margin .9s cubic-bezier(.22, 1, .36, 1),
+    opacity .55s ease;
 }
 
 * {
@@ -276,8 +283,10 @@ canvas:focus-visible {
   opacity: .06;
 }
 
+/* Rises as the backdrop photograph dissolves, so the card stock gains the
+   muggu at the same rate it loses the couple rather than going flat. */
 .landing[data-act="revealed"] .muggu-backdrop {
-  opacity: .1;
+  opacity: .16;
 }
 
 @keyframes muggu-draw {
@@ -478,6 +487,9 @@ canvas:focus-visible {
   justify-content: center;
   gap: clamp(.4rem, 1.6vw, .8rem);
   text-align: center;
+  /* Matches the announcement's collapse, so the offset and the shrinking
+     content resolve as a single movement. */
+  transition: padding-top .9s var(--ease-silk);
 }
 
 /* ----------------------------------------------------- act 1: the seal */
@@ -797,6 +809,16 @@ canvas:focus-visible {
   font-style: normal;
 }
 
+/* The rule and the blessing belong to the announcement act. They collapse
+   rather than vanish: every height change at the reveal is transitioned on the
+   same curve and duration as the stage's padding, so the column settles once,
+   smoothly, instead of snapping. */
+.announcement-rule-slot {
+  max-height: 3rem;
+  overflow: hidden;
+  transition: var(--announce-collapse);
+}
+
 .announcement-rule {
   width: min(78%, 13rem);
   margin: .35rem auto .25rem;
@@ -804,13 +826,15 @@ canvas:focus-visible {
 
 .announcement-blessing {
   max-width: 19rem;
+  max-height: 5rem;
   margin: 0;
+  overflow: hidden;
   color: rgba(250, 238, 213, .82);
   font-size: clamp(.9rem, 3.6vw, 1.02rem);
   font-style: italic;
   line-height: 1.45;
   text-shadow: 0 1px 8px rgba(0, 0, 0, .5);
-  transition: opacity .6s ease;
+  transition: var(--announce-collapse);
 }
 
 .landing[data-act="revealed"] .announcement-names {
@@ -822,9 +846,12 @@ canvas:focus-visible {
   font-size: clamp(.5rem, 2.2vw, .6rem);
 }
 
-.landing[data-act="revealed"] .announcement-rule,
+.landing[data-act="revealed"] .announcement-rule-slot,
 .landing[data-act="revealed"] .announcement-blessing {
-  display: none;
+  max-height: 0;
+  margin-top: 0;
+  margin-bottom: 0;
+  opacity: 0;
 }
 
 /* Her face sits high in the backdrop photo, so the whole text column drops
@@ -833,6 +860,15 @@ canvas:focus-visible {
    its value; the large figure is deliberate. */
 .landing[data-act="announcing"] .landing-stage {
   padding-top: clamp(6rem, 28dvh, 13rem);
+}
+
+/* Held high on purpose. Losing the blessing and the smaller names shorten the
+   column, and a centred column would float the date back down by half of that;
+   carrying most of the announcing offset keeps the date close to where the
+   guest uncovered it, so the reveal is a short settle rather than a relocation.
+   The countdown is absolutely placed and contributes nothing here. */
+.landing[data-act="revealed"] .landing-stage {
+  padding-top: clamp(4rem, 20dvh, 9rem);
 }
 
 /* ------------------------------------------------- act 3: scratch panel */
@@ -844,33 +880,30 @@ canvas:focus-visible {
   flex: 0 0 auto;
 }
 
+/* The foil's backing *is* the save-the-date panel. It is sized by its own
+   contents rather than by an aspect ratio, so the date sits in exactly the
+   same place before and after the scratch and nothing is swapped at the
+   reveal. The min-height only guarantees a generous area to scratch. */
 .scratch-card {
   position: relative;
   width: 100%;
-  aspect-ratio: 16 / 10;
+  min-height: 11rem;
+  display: flex;
   overflow: hidden;
-  border: 1px solid rgba(216, 174, 85, .6);
-  background:
-    radial-gradient(ellipse at 50% 30%, rgba(94, 27, 36, .9), rgba(32, 10, 15, .95));
-  box-shadow:
-    0 18px 44px rgba(0, 0, 0, .45),
-    inset 0 0 0 4px rgba(216, 174, 85, .12);
   isolation: isolate;
 }
 
 .scratch-face {
-  position: absolute;
+  position: relative;
   z-index: 1;
-  inset: 0;
   display: flex;
+  width: 100%;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: .3rem;
-  padding: .8rem;
+  padding: .8rem 0;
 }
 
-.scratch-face-date,
 .date-hero-date {
   display: flex;
   align-items: center;
@@ -878,7 +911,6 @@ canvas:focus-visible {
   gap: .55rem;
 }
 
-.scratch-face-day,
 .date-hero-day {
   color: var(--gold-pale);
   font-family: var(--font-display-stack);
@@ -888,7 +920,6 @@ canvas:focus-visible {
   text-shadow: 0 0 28px rgba(216, 174, 85, .5);
 }
 
-.scratch-face-rest,
 .date-hero-rest {
   display: flex;
   flex-direction: column;
@@ -930,9 +961,9 @@ canvas:focus-visible {
   pointer-events: none;
 }
 
-.scratch-card.is-scratched .scratch-face {
-  animation: date-pop .7s var(--ease-silk);
-}
+/* Deliberately no pop on the uncovered date. It is already in its final
+   position under the foil, and scaling it there was reading as the first of
+   several jumps rather than as a flourish. */
 
 .scratch-prompt {
   position: absolute;
@@ -969,40 +1000,36 @@ canvas:focus-visible {
 
 /* ------------------------------------------------- act 4: the date hero */
 
-.landing-hero-portrait {
-  position: relative;
-  z-index: 8;
-  flex: 0 1 auto;
-  min-height: 0;
-  /* Aspect ratio is pinned so the portrait's crop window stays predictable
-     across viewports; the zoom prop is tuned against this exact ratio. */
-  height: clamp(9.5rem, 26dvh, 13rem);
-  aspect-ratio: 1 / 1.15;
-  width: auto;
-  max-width: 64vw;
-}
-
-.landing-hero-portrait .wedding-portrait {
-  width: 100%;
-  height: 100%;
-}
-
+/* Lives inside the scratch card, both before and after the foil comes off. */
 .date-hero {
   position: relative;
   z-index: 8;
   display: flex;
+  width: 100%;
   flex: 0 0 auto;
   flex-direction: column;
   align-items: center;
   gap: .22rem;
   padding: .55rem 1.4rem .65rem;
-  border-top: 1px solid rgba(216, 174, 85, .55);
-  border-bottom: 1px solid rgba(216, 174, 85, .55);
-  background: linear-gradient(90deg, transparent, rgba(94, 27, 36, .42), transparent);
 }
 
-.date-hero::before,
-.date-hero::after {
+/* The rules, the maroon wash and a soft bloom, held on their own layer so they
+   can widen outward from the number the guest just uncovered instead of
+   arriving with it as a finished card. */
+.date-hero-rules {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  border-top: 1px solid rgba(216, 174, 85, .55);
+  border-bottom: 1px solid rgba(216, 174, 85, .55);
+  background:
+    radial-gradient(ellipse at 50% 50%, rgba(216, 174, 85, .18), transparent 72%),
+    linear-gradient(90deg, transparent, rgba(94, 27, 36, .46), transparent);
+  pointer-events: none;
+}
+
+.date-hero-rules::before,
+.date-hero-rules::after {
   position: absolute;
   left: 50%;
   width: .4rem;
@@ -1013,8 +1040,8 @@ canvas:focus-visible {
   transform: translateX(-50%) rotate(45deg);
 }
 
-.date-hero::before { top: -.21rem; }
-.date-hero::after { bottom: -.21rem; }
+.date-hero-rules::before { top: -.21rem; }
+.date-hero-rules::after { bottom: -.21rem; }
 
 .date-hero-label {
   color: var(--gold);
@@ -1025,9 +1052,17 @@ canvas:focus-visible {
   text-indent: .34em;
 }
 
+/* Out of the flex column on purpose. The stage is centre-justified, so a
+   countdown added below the date would push the date back up the moment it
+   mounted; anchored to the foot of the stage it simply fills space that is
+   already clear. */
 .landing-countdown {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
   width: min(100%, 24rem);
-  flex: 0 0 auto;
+  margin: 0 auto;
 }
 
 /* ------------------------------------------------------------ countdown */
@@ -1105,86 +1140,125 @@ canvas:focus-visible {
   color: var(--gold);
 }
 
-/* ------------------------------------------------- keep scrolling button */
+/* ---------------------------------------------------- keep scrolling cue */
 
+/* A pressed-card plaque: obviously a control, but cut from the same stock and
+   gold rules as the ceremony cards so it belongs to the invitation. */
 .journey-next-button {
-  display: inline-flex;
-  width: min(62vw, 22rem);
-  min-height: 2.7rem;
+  position: relative;
+  display: flex;
+  width: fit-content;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: .45rem;
-  padding: .5rem 1.1rem;
-  border: 1px solid rgba(255, 245, 214, .75);
-  border-radius: 999px;
-  /* Translucent gold wash so the pill reads as a lit-up hover chip rather than
-     a solid banner; it fills in on hover and press. */
-  background: linear-gradient(180deg, rgba(251, 238, 194, .26) 0%, rgba(194, 146, 60, .2) 100%);
-  box-shadow:
-    0 8px 20px rgba(0, 0, 0, .4),
-    0 0 0 5px rgba(216, 174, 85, .1),
-    inset 0 1px 0 rgba(255, 255, 255, .35);
+  gap: .28rem;
+  padding: .2rem 1.1rem .3rem;
+  border: 0;
+  background: none;
   color: var(--gold-pale);
   cursor: pointer;
-  animation: journey-breathe 2.9s ease-in-out infinite;
-  transition:
-    transform .25s var(--ease-silk),
-    box-shadow .25s ease,
-    background .25s ease;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform .3s var(--ease-silk);
 }
 
-.journey-next-rule {
-  width: 1.1rem;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(240, 207, 140, .8));
+/* Just enough shade to hold the cue over whichever scene is behind it. */
+.journey-next-button::before {
+  position: absolute;
+  z-index: -1;
+  inset: -.5rem -1.8rem -.7rem;
+  background: radial-gradient(ellipse at 50% 60%, rgba(20, 6, 10, .6), rgba(20, 6, 10, 0) 74%);
+  content: "";
+  pointer-events: none;
 }
+
+.journey-next-plaque {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: .55rem;
+  padding: .52rem 1.15rem;
+  border: 1px solid rgba(216, 174, 85, .72);
+  border-radius: 7px;
+  background:
+    var(--paper-grain),
+    linear-gradient(170deg, rgba(46, 16, 24, .9), rgba(20, 7, 12, .94));
+  box-shadow:
+    0 10px 26px rgba(0, 0, 0, .5),
+    inset 0 0 0 3px rgba(216, 174, 85, .13),
+    inset 0 1px 0 rgba(255, 236, 198, .2),
+    inset 0 -1px 0 rgba(0, 0, 0, .4);
+  animation: cue-breathe 3.4s ease-in-out infinite;
+  transition:
+    border-color .3s ease,
+    box-shadow .3s ease;
+}
+
+/* Gold pips on the short edges, the way the ceremony cards are marked. */
+.journey-next-plaque::before,
+.journey-next-plaque::after {
+  position: absolute;
+  top: 50%;
+  width: .3rem;
+  height: .3rem;
+  border: 1px solid rgba(216, 174, 85, .8);
+  background: var(--maroon-night);
+  content: "";
+  transform: translateY(-50%) rotate(45deg);
+}
+
+.journey-next-plaque::before { left: -.17rem; }
+.journey-next-plaque::after { right: -.17rem; }
 
 .journey-next-text {
   font-family: var(--font-label-stack);
-  font-size: .64rem;
-  font-weight: 700;
-  letter-spacing: .18em;
-  text-indent: .18em;
+  font-size: .62rem;
+  font-weight: 600;
+  letter-spacing: .3em;
+  text-indent: .3em;
+  text-shadow: 0 1px 10px rgba(0, 0, 0, .75);
+  transition: color .3s ease;
 }
 
 .journey-next-chevron {
   display: inline-block;
-  color: var(--gold-light);
-  font-weight: 700;
-  animation: chevron-nudge 1.4s ease-in-out infinite;
+  color: var(--gold);
+  font-size: .82rem;
+  line-height: 1;
+  animation: chevron-nudge 1.8s ease-in-out infinite;
 }
 
-.journey-next-button:hover {
-  transform: translateY(-3px);
-  background: linear-gradient(180deg, rgba(251, 238, 194, .42) 0%, rgba(194, 146, 60, .34) 100%);
+.journey-next-button:hover .journey-next-plaque,
+.journey-next-button:focus-visible .journey-next-plaque {
+  border-color: rgba(247, 230, 180, .95);
   box-shadow:
-    0 14px 30px rgba(0, 0, 0, .5),
-    0 0 0 7px rgba(216, 174, 85, .18),
-    inset 0 1px 0 rgba(255, 255, 255, .5);
+    0 14px 32px rgba(0, 0, 0, .55),
+    inset 0 0 0 3px rgba(216, 174, 85, .24),
+    inset 0 1px 0 rgba(255, 236, 198, .3),
+    0 0 22px rgba(216, 174, 85, .3);
+}
+
+.journey-next-button:hover .journey-next-text {
+  color: #fff8e7;
 }
 
 .journey-next-button:active {
-  transform: translateY(-1px) scale(.97);
+  transform: translateY(2px) scale(.985);
 }
 
 .journey-next-button:focus-visible {
-  outline: 3px solid var(--gold-light);
-  outline-offset: 3px;
+  outline: none;
 }
 
-@keyframes journey-breathe {
-  0%, 100% { box-shadow: 0 8px 20px rgba(0, 0, 0, .4), 0 0 0 5px rgba(216, 174, 85, .1), inset 0 1px 0 rgba(255, 255, 255, .35); }
-  50% { box-shadow: 0 8px 20px rgba(0, 0, 0, .4), 0 0 0 10px rgba(216, 174, 85, .02), inset 0 1px 0 rgba(255, 255, 255, .35); }
+@keyframes cue-breathe {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2.5px); }
 }
 
 .sticky-details {
   position: fixed;
   z-index: 40;
-  right: 1rem;
-  bottom: max(1rem, env(safe-area-inset-bottom));
-  left: 1rem;
-  width: auto;
-  max-width: 20rem;
+  right: 0;
+  bottom: max(.9rem, calc(env(safe-area-inset-bottom) + .4rem));
+  left: 0;
   margin: 0 auto;
 }
 
@@ -1451,8 +1525,6 @@ canvas:focus-visible {
 
 /* The portrait clips its own overflow so the zoomed photo stays inside the
    oval, which means outer decoration has to live on the wrapper instead. */
-.landing-hero-portrait::before,
-.landing-hero-portrait::after,
 .event-portrait::before,
 .event-portrait::after {
   position: absolute;
@@ -1460,18 +1532,6 @@ canvas:focus-visible {
   border-radius: 50% / 42%;
   content: "";
   pointer-events: none;
-}
-
-/* opening: a single gold rope, with the glow carried by shadow not another line */
-.landing-hero-portrait::before {
-  inset: -9px;
-  box-shadow: 0 0 34px rgba(216, 174, 85, .3);
-  animation: frame-halo 5.5s ease-in-out infinite;
-}
-
-.landing-hero-portrait::after {
-  inset: -7px;
-  border: 3px double rgba(243, 214, 148, .9);
 }
 
 /* haldi: turmeric water, one ring with a second rippling outward from it */
@@ -2180,12 +2240,6 @@ canvas:focus-visible {
   50% { transform: translateX(16px) rotate(12deg); }
 }
 
-@keyframes date-pop {
-  0% { transform: scale(.82); }
-  58% { transform: scale(1.07); }
-  100% { transform: scale(1); }
-}
-
 @keyframes chevron-nudge {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(5px); }
@@ -2263,14 +2317,20 @@ canvas:focus-visible {
 }
 
 @media (max-height: 700px) {
-  .landing-hero-portrait {
-    height: clamp(7.5rem, 22dvh, 9.5rem);
+  .scratch-card {
+    min-height: 9rem;
   }
 
   /* Short screens cannot spare the full offset without pushing the scratch
      card off the bottom. */
   .landing[data-act="announcing"] .landing-stage {
     padding-top: clamp(3rem, 16dvh, 6rem);
+  }
+
+  /* Short screens have less room under the date, so the column cannot hold as
+     much of the announcing offset without running into the countdown. */
+  .landing[data-act="revealed"] .landing-stage {
+    padding-top: clamp(2rem, 11dvh, 4rem);
   }
 
   .landing[data-act="announcing"] .announcement-names {

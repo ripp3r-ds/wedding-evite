@@ -32,6 +32,30 @@ const riseIn = {
   }
 };
 
+// The save-the-date surround grows away from the number the guest just
+// uncovered: the label lifts off its top edge, the Telugu line settles out of
+// its foot. Both start where the date is, so nothing arrives from off-stage.
+const outFromDate = (from: number) => ({
+  hidden: { opacity: 0, y: from },
+  shown: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.8, ease: EASE }
+  }
+});
+
+const dateLabelOut = outFromDate(11);
+const dateTeluguOut = outFromDate(-11);
+
+const dateRulesOut = {
+  hidden: { opacity: 0, scaleX: 0.42 },
+  shown: {
+    opacity: 1,
+    scaleX: 1,
+    transition: { duration: 0.9, ease: EASE }
+  }
+};
+
 function PaperFlap({
   side,
   open,
@@ -87,9 +111,8 @@ export function WeddingOpening({
   onAnnouncement: () => void;
 }) {
   const [act, setAct] = useState<Act>("sealed");
-  // Held back until the scratch panel has finished exiting. Mounting the
-  // portrait and countdown while it is still occupying space makes the whole
-  // stage squeeze and snap back.
+  // Held back so the countdown arrives after the save-the-date panel has
+  // finished building itself around the uncovered number.
   const [heroReady, setHeroReady] = useState(false);
   const reducedMotion = useReducedMotion();
   const reduced = Boolean(reducedMotion);
@@ -100,13 +123,13 @@ export function WeddingOpening({
 
   useEffect(() => {
     if (act !== "unsealing") return;
-    // Pinned to roughly half the door duration (~2.9s), so the announcement
-    // starts rising while the doors are still swinging. This ratio is what
-    // keeps the stage from sitting empty after the tap; if the swing is
-    // retimed, move this with it rather than on its own.
+    // The doors are eased on a quintic, so they are ~90% open by 1s even
+    // though the swing runs 2.9s. Handing over at 0.82s means the card starts
+    // blending in as the doors clear rather than after they have finished and
+    // left the guest looking at bare board.
     const timeout = window.setTimeout(
       () => setAct("announcing"),
-      reduced ? 200 : 1480
+      reduced ? 200 : 820
     );
     return () => window.clearTimeout(timeout);
   }, [act, reduced]);
@@ -117,17 +140,19 @@ export function WeddingOpening({
 
   useEffect(() => {
     if (act !== "revealed") return;
+    // After the rules, the label and the Telugu line have settled (~1.5s).
     const timeout = window.setTimeout(
       () => setHeroReady(true),
-      reduced ? 0 : 1250
+      reduced ? 0 : 1150
     );
     return () => window.clearTimeout(timeout);
   }, [act, reduced]);
 
-  // Long enough to read the date you just uncovered, short enough that the
-  // spent card does not sit there waiting to be cleared.
+  // Long enough for the foil to finish lifting (0.6s) and the date to finish
+  // its pop, so the panel starts building outward from a number that has
+  // already settled.
   const handleScratched = useCallback(() => {
-    window.setTimeout(() => setAct("revealed"), reduced ? 0 : 620);
+    window.setTimeout(() => setAct("revealed"), reduced ? 0 : 760);
   }, [reduced]);
 
   return (
@@ -155,16 +180,24 @@ export function WeddingOpening({
       <div className="landing-frame">
         <FrameCorners />
 
-        {/* The couple behind the announcement and the scratch card. It is gone
-            by "revealed", where the hero oval takes over, so the two portrait
-            treatments never share the screen. */}
+        {/* The couple behind the announcement and the scratch panel. It belongs
+            to the announcement only: once the date is uncovered it dissolves
+            back into the card stock, leaving the save-the-date on bare board.
+            No scale drift, which would read as a second movement under the
+            date that is meant to be settling. */}
         {announced && (
           <motion.div
             aria-hidden="true"
             className="landing-photo"
             initial={reduced ? false : { opacity: 0, scale: 1.06 }}
-            animate={{ opacity: revealed ? 0 : 0.92, scale: revealed ? 1.1 : 1 }}
-            transition={{ duration: reduced ? 0.25 : 1.7, ease: "easeOut" }}
+            animate={{ opacity: revealed ? 0 : 0.92, scale: 1 }}
+            transition={
+              reduced
+                ? { duration: 0.25 }
+                : revealed
+                  ? { duration: 1.1, ease: "easeInOut" }
+                  : { duration: 1.4, ease: "easeOut" }
+            }
           >
             <WeddingPortrait
               alt=""
@@ -227,25 +260,25 @@ export function WeddingOpening({
         </div>
 
         <div className="landing-stage">
-          <AnimatePresence>
+          {/* popLayout: the seal is lifted out of the flex column the instant
+              it starts leaving, so the announcement can mount underneath it at
+              0.82s without the stage squeezing. The broken wax then flies away
+              over the arriving names instead of holding them back. */}
+          <AnimatePresence mode="popLayout">
             {act === "sealed" ? (
               <motion.div
                 className="landing-seal-slot"
                 key="seal"
                 initial={false}
-                // A late, gentle fade only. No blur or scale here: this element
+                // A gentle fade only. No blur or scale here: this element
                 // carries the wax shards, and blurring it would smear the break
                 // the guest just triggered. The delay outlasts the shard
                 // flight so they are gone before the slot clears.
                 exit={{ opacity: 0 }}
-                // Ends at 1.42s, just inside the shards' 1.45s flight, so the
-                // slot unmounts at ~1.45s and is out of the stage's flex column
-                // before "announcing" mounts the names at 1.48s. Overlapping
-                // the two squeezes the stage and snaps it back.
                 transition={
                   reduced
                     ? { duration: 0.2 }
-                    : { duration: 0.5, delay: 0.92, ease: EASE }
+                    : { duration: 0.45, delay: 0.62, ease: EASE }
                 }
               >
                 {/* The lettering leaves on its own, quickly, so it does not sit
@@ -277,33 +310,17 @@ export function WeddingOpening({
             ) : null}
           </AnimatePresence>
 
-          {heroReady && (
-            <motion.div
-              className="landing-hero-portrait"
-              initial={reduced ? false : { opacity: 0, y: 26 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: reduced ? 0 : 1.9, ease: EASE }}
-            >
-              <WeddingPortrait
-                alt="Rithwik and Kalyani"
-                objectPosition="50% 0%"
-                preload
-                scene="opening"
-                sizes="(max-width: 640px) 86vw, 320px"
-                variant="oval"
-                zoom={1.85}
-              />
-            </motion.div>
-          )}
-
           {announced && (
             <motion.div
               className="announcement"
+              // No layout animation here. Every height change at the reveal is
+              // driven by CSS transitions on the same curve, and a framer
+              // layout pass measuring mid-transition would fight them.
               initial={reduced ? false : "hidden"}
               animate={reduced ? undefined : "shown"}
               variants={{
                 hidden: {},
-                shown: { transition: { staggerChildren: 0.38, delayChildren: 0.16 } }
+                shown: { transition: { staggerChildren: 0.3, delayChildren: 0.1 } }
               }}
             >
               <motion.span className="announcement-kicker" variants={riseIn}>
@@ -312,7 +329,7 @@ export function WeddingOpening({
               <motion.h1 className="announcement-names" variants={riseIn}>
                 Rithwik <i>&amp;</i> Kalyani
               </motion.h1>
-              <motion.div variants={riseIn}>
+              <motion.div className="announcement-rule-slot" variants={riseIn}>
                 <OrnamentDivider className="announcement-rule" />
               </motion.div>
               <motion.p className="announcement-blessing" variants={riseIn}>
@@ -321,62 +338,79 @@ export function WeddingOpening({
             </motion.div>
           )}
 
-          <AnimatePresence mode="wait">
-            {act === "announcing" && (
-              <motion.div
-                className="scratch-slot"
-                key="scratch"
-                initial={reduced ? false : { opacity: 0, y: 16, scale: 0.97 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                // Shrinks away in place, like the spent foil being lifted off,
-                // rather than sliding out as a card of its own.
-                exit={reduced ? { opacity: 0 } : { opacity: 0, scale: 0.92 }}
-                transition={{
-                  duration: reduced ? 0.2 : 0.62,
-                  ease: EASE
-                }}
+          {/* One panel, mounted once and never replaced. The foil is painted
+              over the top of it, so when the guest scratches it off the date is
+              already exactly where it will stay; only the surround builds in
+              around it. Nothing here unmounts at the reveal, which is what used
+              to make it read as a change of page. */}
+          {announced && (
+            <motion.div
+              className="scratch-slot"
+              initial={reduced ? false : { opacity: 0, y: 18 }}
+              animate={{ opacity: 1, y: 0 }}
+              // Starts just behind the names and takes its time, so it blends
+              // up out of the card while the doors are still clearing.
+              transition={{
+                duration: reduced ? 0.2 : 1.1,
+                delay: reduced ? 0 : 0.35,
+                ease: EASE
+              }}
+            >
+              <ScratchReveal
+                active={act === "announcing"}
+                autoReveal={reduced}
+                onRevealed={handleScratched}
               >
-                <ScratchReveal
-                  active
-                  autoReveal={reduced}
-                  onRevealed={handleScratched}
-                />
-              </motion.div>
-            )}
+                <motion.div
+                  className="date-hero"
+                  // No entrance of its own. The rules, the label and the Telugu
+                  // line hold their final positions from the start so the date
+                  // never shifts; they just fade up once the foil is gone.
+                  initial={false}
+                  animate={revealed || reduced ? "shown" : "hidden"}
+                  variants={{
+                    hidden: {},
+                    shown: {
+                      transition: { delayChildren: 0.3, staggerChildren: 0.2 }
+                    }
+                  }}
+                >
+                  <motion.span
+                    aria-hidden="true"
+                    className="date-hero-rules"
+                    variants={dateRulesOut}
+                  />
+                  <motion.span className="date-hero-label" variants={dateLabelOut}>
+                    SAVE THE DATE
+                  </motion.span>
+                  <time className="date-hero-date" dateTime="2026-10-29">
+                    <span className="date-hero-day">29</span>
+                    <span className="date-hero-rest">
+                      <span className="date-hero-month">OCTOBER</span>
+                      <span className="date-hero-year">2026</span>
+                    </span>
+                  </time>
+                  <motion.span
+                    className="date-hero-telugu"
+                    variants={dateTeluguOut}
+                  >
+                    వివాహ శుభముహూర్తం
+                  </motion.span>
+                </motion.div>
+              </ScratchReveal>
+            </motion.div>
+          )}
 
-            {revealed && (
-              <motion.div
-                className="date-hero"
-                key="date"
-                // Picks up close to full size so it reads as the same date
-                // settling into place, not a second card popping in.
-                initial={reduced ? false : { opacity: 0, scale: 0.9, y: 14 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                transition={
-                  reduced
-                    ? { duration: 0 }
-                    : { type: "spring", stiffness: 58, damping: 18, mass: 1.15 }
-                }
-              >
-                <span className="date-hero-label">SAVE THE DATE</span>
-                <time className="date-hero-date" dateTime="2026-10-29">
-                  <span className="date-hero-day">29</span>
-                  <span className="date-hero-rest">
-                    <span className="date-hero-month">OCTOBER</span>
-                    <span className="date-hero-year">2026</span>
-                  </span>
-                </time>
-                <span className="date-hero-telugu">వివాహ శుభముహూర్తం</span>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
+          {/* Pinned to the foot of the stage rather than stacked under the
+              date, so it fades up into space that was already empty. In the
+              flex column it was adding its own height to the stage's centring
+              and shoving the date back up a second time. */}
           {heroReady && (
             <motion.div
               className="landing-countdown"
-              initial={reduced ? false : { opacity: 0, y: 18 }}
+              initial={reduced ? false : { opacity: 0, y: 14 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: reduced ? 0 : 1.45, delay: reduced ? 0 : 0.7 }}
+              transition={{ duration: reduced ? 0 : 1.1, ease: EASE }}
             >
               <Countdown variant="journey" />
             </motion.div>

@@ -398,6 +398,8 @@ function Story({ locked }: { locked: boolean }) {
 export default function Home() {
   const [announced, setAnnounced] = useState(false);
   const [stopIndex, setStopIndex] = useState(-1);
+  // The onward cue is only offered once the guest has settled on a section.
+  const [scrolling, setScrolling] = useState(false);
   const scrollerRef = useRef<HTMLDivElement>(null);
   const reducedMotion = useReducedMotion();
   const unlockStory = useCallback(() => setAnnounced(true), []);
@@ -410,6 +412,7 @@ export default function Home() {
     if (!scroller) return;
 
     let frame = 0;
+    let settle = 0;
     const sectionIds = ["opening", ...detailStops.map((stop) => stop.id)];
     const syncStopToScroll = () => {
       window.cancelAnimationFrame(frame);
@@ -442,11 +445,19 @@ export default function Home() {
       });
     };
 
-    scroller.addEventListener("scroll", syncStopToScroll, { passive: true });
+    const onScroll = () => {
+      setScrolling(true);
+      window.clearTimeout(settle);
+      settle = window.setTimeout(() => setScrolling(false), 850);
+      syncStopToScroll();
+    };
+
+    scroller.addEventListener("scroll", onScroll, { passive: true });
     syncStopToScroll();
     return () => {
-      scroller.removeEventListener("scroll", syncStopToScroll);
+      scroller.removeEventListener("scroll", onScroll);
       window.cancelAnimationFrame(frame);
+      window.clearTimeout(settle);
     };
   }, []);
 
@@ -485,20 +496,34 @@ export default function Home() {
         <Story locked={!announced} />
       </div>
       <AnimatePresence>
-        {announced && nextStop && (
+        {announced && nextStop && !scrolling && (
           <motion.button
             className="journey-next-button sticky-details"
-            initial={{ opacity: 0, y: reducedMotion ? 0 : 18 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: reducedMotion ? 0 : 12 }}
-            transition={{ duration: reducedMotion ? 0 : 0.5, ease: [0.22, 1, 0.36, 1] }}
+            // Eases in a beat after the guest stops, and gets out of the way
+            // quickly the moment they start moving again.
+            initial={{ opacity: 0, y: reducedMotion ? 0 : 14 }}
+            animate={{
+              opacity: 1,
+              y: 0,
+              transition: {
+                duration: reducedMotion ? 0 : 0.6,
+                delay: reducedMotion ? 0 : 0.35,
+                ease: [0.22, 1, 0.36, 1]
+              }
+            }}
+            exit={{
+              opacity: 0,
+              y: reducedMotion ? 0 : 6,
+              transition: { duration: reducedMotion ? 0 : 0.28, ease: "easeOut" }
+            }}
             onClick={showNextDetails}
             type="button"
           >
-            <span className="journey-next-rule" aria-hidden="true" />
-            <span className="journey-next-text">{nextStop.label}</span>
-            <span className="journey-next-chevron" aria-hidden="true">
-              ↓
+            <span className="journey-next-plaque">
+              <span className="journey-next-text">{nextStop.label}</span>
+              <span className="journey-next-chevron" aria-hidden="true">
+                ↓
+              </span>
             </span>
           </motion.button>
         )}
