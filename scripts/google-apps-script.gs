@@ -18,6 +18,7 @@ function doPost(e) {
       data.attendingHaldi === true ? "Yes" : "No",
       data.attendingWedding === true ? "Yes" : "No",
       data.attendingReception === true ? "Yes" : "No",
+      data.declined === true ? "Yes" : "No",
       typeof data.travelNotes === "string" ? data.travelNotes : ""
     ]);
 

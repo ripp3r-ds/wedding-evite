@@ -23,8 +23,15 @@ attribute on `.landing` in [`wedding-opening.tsx`](./app/components/wedding-open
    arrive together. Enter/Space reveals the date without scratching.
 4. **`revealed`** — the date springs in, then a `heroReady` flag mounts the half-length oval
    portrait and the countdown once the scratch panel has finished exiting, so the stage never
-   reflows mid-transition. The **keep scrolling** button leads to Haldi, Wedding, Reception
-   and RSVP.
+   reflows mid-transition. Contextual **Next** buttons lead to Haldi, Wedding, Reception
+   and RSVP. The ceremony story is not mounted until this point, keeping its portraits,
+   SVGs and animation work out of the sealed screen.
+
+The revealed state and last viewed section are remembered while navigating within the
+browser tab. An explicit browser reload starts again from the sealed invitation, while the
+RSVP draft and music preference remain intact. **Replay invitation** in the footer also
+starts the opening again. Add `?guest=Name` to a shared URL to place a guest name on the
+seal screen and prefill the RSVP form.
 
 Each ceremony section carries its own palette, portrait and celebration artefacts —
 marigolds for Haldi, thalambralu for the wedding, floating diyas for the reception — via
@@ -38,6 +45,11 @@ garland of cream buds over deep maroon for the wedding (matching the garlands th
 actually wear), and a soft lamplit rim crowned by a single flickering diya for the reception.
 Each scene gets one decorative ring and no more, so the portrait itself only carries a single
 hairline.
+
+Each ceremony card can download its own calendar event. **Save all celebrations** in the RSVP
+section downloads one calendar containing the three events in the `Asia/Kolkata` timezone.
+The configured durations are three hours for Haldi, four hours for the Wedding and three
+hours for the Reception.
 
 The ovals are `1 / 1.15` rather than square: an ellipse pinches towards the top, and a
 squarer frame clipped the sides of their heads. `WeddingPortrait` takes a `zoom` prop that
@@ -71,10 +83,22 @@ The invitation already opens the pre-filled WhatsApp reply. Google Sheets loggin
 3. Deploy the script as a **Web app**, execute it as yourself, allow access to anyone with the link, and copy its deployment URL.
 4. Put `NEXT_PUBLIC_GOOGLE_SCRIPT_URL=https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec` in `.env.local` (or `.env`) and restart the Next.js app.
 
-When configured, the RSVP JSON is sent in a background `no-cors` POST; WhatsApp remains the guest's visible confirmation step.
+When configured, the RSVP JSON is queued with `sendBeacon`, with a keepalive `no-cors` POST
+as fallback. WhatsApp remains the guest's visible confirmation step.
 
-The RSVP payload keys match the Apps Script handler: `name`, `attendingHaldi`, `attendingWedding`, `attendingReception`, `travelNotes`, and `timestamp`. If you change the Apps Script code, update the existing web app deployment to a new version before testing new submissions.
+The RSVP payload keys match the Apps Script handler: `name`, `attendingHaldi`,
+`attendingWedding`, `attendingReception`, `declined`, `travelNotes`, and `timestamp`.
+The RSVP form draft is kept for the browser tab. If you change the Apps Script code, update
+the existing web app deployment to a new version before testing new submissions.
+
+## Background music
+
+The ambience starts from the wax-seal tap so mobile autoplay policies are satisfied. It
+fades in and out, pauses while the page is hidden, resumes when the guest returns, and
+remembers a manual play or pause choice for the browser tab.
 
 ## Wedding countdown
 
 The countdown targets **29 October 2026 at 10:30 PM India Standard Time**.
+On the wedding day its heading changes to **Today is the day**. After the muhurtham it
+switches to a celebration message, and after the Reception it becomes a thank-you state.
