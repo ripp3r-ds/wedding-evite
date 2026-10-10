@@ -146,12 +146,17 @@ canvas:focus-visible {
   transition: background-color .8s ease;
 }
 
+/* No scroll snapping. Snapping fought every free scroll, so dragging felt like
+   it was catching on each section instead of running smoothly; the guest is
+   taken stop to stop by the KEEP SCROLLING button, which scrolls the section
+   into view explicitly. */
 .invitation-scroller {
   height: 100%;
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior-y: contain;
-  scroll-snap-type: y proximity;
+  /* Hands the scroll to the compositor instead of the main thread on iOS. */
+  -webkit-overflow-scrolling: touch;
 }
 
 /* Until the seal is opened the ceremony sections stay out of reach, so the
@@ -178,7 +183,6 @@ canvas:focus-visible {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  scroll-snap-align: start;
 }
 
 /* ============================================================ LANDING */
@@ -1262,6 +1266,100 @@ canvas:focus-visible {
   margin: 0 auto;
 }
 
+/* ------------------------------------------------- the music medallion */
+
+/* A small brass seal in the corner, cut from the same stock as the cue
+   plaque so it reads as part of the card rather than a player widget. */
+.music-toggle {
+  position: fixed;
+  z-index: 41;
+  right: max(.85rem, calc(env(safe-area-inset-right) + .6rem));
+  bottom: max(.95rem, calc(env(safe-area-inset-bottom) + .45rem));
+  padding: .4rem;
+  border: 0;
+  background: none;
+  color: var(--gold-pale);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.music-toggle-face {
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border: 1px solid rgba(216, 174, 85, .72);
+  border-radius: 50%;
+  background:
+    var(--paper-grain),
+    linear-gradient(170deg, rgba(46, 16, 24, .9), rgba(20, 7, 12, .94));
+  box-shadow:
+    0 8px 20px rgba(0, 0, 0, .5),
+    inset 0 0 0 2px rgba(216, 174, 85, .13),
+    inset 0 1px 0 rgba(255, 236, 198, .2);
+  transition:
+    border-color .3s ease,
+    box-shadow .3s ease,
+    transform .3s var(--ease-silk);
+}
+
+.music-toggle:hover .music-toggle-face,
+.music-toggle:focus-visible .music-toggle-face {
+  border-color: rgba(247, 230, 180, .95);
+  box-shadow:
+    0 10px 24px rgba(0, 0, 0, .55),
+    inset 0 0 0 2px rgba(216, 174, 85, .24),
+    0 0 18px rgba(216, 174, 85, .3);
+}
+
+.music-toggle:active .music-toggle-face {
+  transform: scale(.94);
+}
+
+.music-toggle:focus-visible {
+  outline: none;
+}
+
+.music-glyph {
+  width: .95rem;
+  height: .95rem;
+  margin-left: .1rem;
+  color: var(--gold);
+}
+
+/* Three brass reeds that rise and fall while the music runs. */
+.music-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: .14rem;
+  height: .85rem;
+}
+
+.music-bars i {
+  width: .13rem;
+  height: 100%;
+  border-radius: 1px;
+  background: var(--gold);
+  transform-origin: 50% 100%;
+  animation: music-reed 1.1s ease-in-out infinite;
+}
+
+.music-bars i:nth-child(2) { animation-delay: .18s; }
+.music-bars i:nth-child(3) { animation-delay: .36s; }
+
+@keyframes music-reed {
+  0%, 100% { transform: scaleY(.34); }
+  50% { transform: scaleY(1); }
+}
+
+/* With motion off the reeds hold a static stepped shape so the control still
+   reads as playing rather than paused. */
+@media (prefers-reduced-motion: reduce) {
+  .music-bars i:nth-child(1) { transform: scaleY(.5); }
+  .music-bars i:nth-child(2) { transform: scaleY(1); }
+  .music-bars i:nth-child(3) { transform: scaleY(.66); }
+}
+
 /* ------------------------------------------------------------ portraits */
 
 .wedding-portrait {
@@ -1379,7 +1477,6 @@ canvas:focus-visible {
   animation-timing-function: linear;
   animation-iteration-count: infinite;
   animation-play-state: paused;
-  will-change: transform, opacity;
 }
 
 .artefact svg {
@@ -1387,8 +1484,22 @@ canvas:focus-visible {
   height: 100%;
 }
 
+/* will-change only while the layer is actually on screen. Left on permanently
+   it pinned a compositor layer per sprite for every scene at once, which is
+   GPU memory a phone has to find before it can draw anything. */
 .artefact-layer[data-active="true"] .artefact {
   animation-play-state: running;
+  will-change: transform, opacity;
+}
+
+/* Phones get a thinner fall. The sprites are gated by nth-child rather than by
+   a JS media query so the server and client render the same markup. */
+@media (max-width: 640px) {
+  .artefact-layer-marigold .artefact:nth-child(n+13),
+  .artefact-layer-thalambralu .artefact:nth-child(n+17),
+  .artefact-layer-diya .artefact:nth-child(n+7) {
+    display: none;
+  }
 }
 
 .artefact-layer-marigold .artefact,
@@ -1632,11 +1743,6 @@ canvas:focus-visible {
   100% { opacity: 0; transform: scale(1.16); }
 }
 
-@keyframes frame-halo {
-  0%, 100% { box-shadow: 0 0 34px rgba(216, 174, 85, .3); }
-  50% { box-shadow: 0 0 52px rgba(216, 174, 85, .46); }
-}
-
 /* ------------------------------------------------------------ the card */
 
 .event-card {
@@ -1659,9 +1765,17 @@ canvas:focus-visible {
     /* Catch-light on the top cut, shade on the bottom: card thickness. */
     inset 0 1px 0 rgba(255, 236, 198, .14),
     inset 0 -1px 0 rgba(0, 0, 0, .34);
-  backdrop-filter: blur(5px);
   color: var(--paper);
   text-align: center;
+}
+
+/* The card's own fill is already near-opaque, so the blur behind it was
+   costing a full-size backdrop snapshot per frame on mobile GPUs for an effect
+   almost nobody could see. Kept only where there is real power to spare. */
+@media (min-width: 900px) and (pointer: fine) {
+  .event-card {
+    backdrop-filter: blur(5px);
+  }
 }
 
 .event-card .corner-flourish {
@@ -1836,7 +1950,6 @@ canvas:focus-visible {
   min-height: 100dvh;
   overflow: visible;
   padding: 1.4rem 1.15rem 6.4rem;
-  scroll-snap-align: start;
 }
 
 .mandapam {

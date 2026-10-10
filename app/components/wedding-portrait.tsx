@@ -7,11 +7,13 @@ import { motion, useInView, useReducedMotion } from "framer-motion";
 export type CoupleScene = "opening" | "haldi" | "wedding" | "reception";
 export type PortraitVariant = "arch" | "medallion" | "bleed" | "oval";
 
+// WebP at the native 848x1264. The PNG originals were ~1.7 MB each, which was
+// most of the page weight on a phone; see scripts/optimize-images.mjs.
 const portraits: Record<CoupleScene, string> = {
-  opening: "/images/couple/opening.png",
-  haldi: "/images/couple/haldi.png",
-  wedding: "/images/couple/wedding.png",
-  reception: "/images/couple/reception.png"
+  opening: "/images/couple/opening.webp",
+  haldi: "/images/couple/haldi.webp",
+  wedding: "/images/couple/wedding.webp",
+  reception: "/images/couple/reception.webp"
 };
 
 export function WeddingPortrait({

@@ -59,7 +59,9 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: "/images/couple/opening.png",
+        // JPEG on purpose: WhatsApp and some other clients are unreliable
+        // with WebP in link previews, even though the site itself uses it.
+        url: "/images/couple/opening-og.jpg",
         width: 848,
         height: 1264,
         alt: "Rithwik and Kalyani"

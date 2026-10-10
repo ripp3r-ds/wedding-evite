@@ -10,6 +10,7 @@ import {
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { WeddingOpening } from "./components/wedding-opening";
 import { WeddingPortrait } from "./components/wedding-portrait";
+import { MusicToggle } from "./components/music-toggle";
 import { CelebrationArtefacts, DiyaSprite } from "./components/celebration-artefacts";
 import {
   FrameCorners,
@@ -411,54 +412,63 @@ export default function Home() {
     const scroller = scrollerRef.current;
     if (!scroller) return;
 
-    let frame = 0;
     let settle = 0;
     const sectionIds = ["opening", ...detailStops.map((stop) => stop.id)];
-    const syncStopToScroll = () => {
-      window.cancelAnimationFrame(frame);
-      frame = window.requestAnimationFrame(() => {
-        const bounds = scroller.getBoundingClientRect();
-        const center = bounds.top + scroller.clientHeight / 2;
-        let closestIndex = 0;
-        let closestDistance = Number.POSITIVE_INFINITY;
+    const sections = sectionIds
+      .map((id) => document.getElementById(id))
+      .filter((node): node is HTMLElement => node !== null);
 
-        sectionIds.forEach((id, index) => {
-          const section = document.getElementById(id);
-          if (!section) return;
-          const sectionBounds = section.getBoundingClientRect();
-          const distance =
-            center < sectionBounds.top
-              ? sectionBounds.top - center
-              : center > sectionBounds.bottom
-                ? center - sectionBounds.bottom
-                : 0;
+    // Which section the guest is on is tracked by the browser rather than by
+    // measuring on every scroll event. The old listener called
+    // getBoundingClientRect on each section inside a rAF, which forced a
+    // layout several times a frame while dragging: a real cost on a phone and
+    // part of why scrolling felt like it was catching.
+    const ratios = new Map<string, number>();
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          ratios.set(entry.target.id, entry.intersectionRatio);
+        }
 
-          if (distance < closestDistance) {
-            closestDistance = distance;
-            closestIndex = index;
+        let bestId = sectionIds[0];
+        let bestRatio = -1;
+        for (const id of sectionIds) {
+          const ratio = ratios.get(id) ?? 0;
+          if (ratio > bestRatio) {
+            bestRatio = ratio;
+            bestId = id;
           }
-        });
+        }
 
-        setStopIndex((current) =>
-          current === closestIndex - 1 ? current : closestIndex - 1
-        );
-      });
-    };
+        const nextIndex = sectionIds.indexOf(bestId) - 1;
+        setStopIndex((current) => (current === nextIndex ? current : nextIndex));
+      },
+      {
+        root: scroller,
+        // Enough steps to tell which section owns most of the viewport without
+        // firing on every pixel.
+        threshold: [0, 0.25, 0.5, 0.75, 1]
+      }
+    );
 
+    sections.forEach((section) => observer.observe(section));
+
+    // The cue still needs to know when movement stops, but this listener now
+    // only touches a timer.
     const onScroll = () => {
       setScrolling(true);
       window.clearTimeout(settle);
       settle = window.setTimeout(() => setScrolling(false), 850);
-      syncStopToScroll();
     };
 
     scroller.addEventListener("scroll", onScroll, { passive: true });
-    syncStopToScroll();
     return () => {
+      observer.disconnect();
       scroller.removeEventListener("scroll", onScroll);
-      window.cancelAnimationFrame(frame);
       window.clearTimeout(settle);
     };
+    // The ceremony sections are always in the DOM (Story only marks them
+    // inert while locked), so the observer can be bound once.
   }, []);
 
   function scrollToStop(id: string) {
@@ -528,6 +538,7 @@ export default function Home() {
           </motion.button>
         )}
       </AnimatePresence>
+      <MusicToggle />
     </div>
   );
 }
