@@ -237,6 +237,162 @@ export function ThoranamHalf({ side }: { side: "left" | "right" }) {
   );
 }
 
+/* Brass ghanta and marigold strands hung across the head of the card.
+
+   This takes over the top of the stage once the toranam has snapped away with
+   the doors and the couple's photo has dissolved, so the save-the-date is not
+   sitting on bare board.
+
+   Everything hangs off one slack cord: the quadratic Bezier
+   (0,5) -> ctrl (150,16) -> (300,5). x is exactly linear in the parameter, so
+   x = 300t and y = 5 + 22t(1 - t); anything can be hung at a given x by
+   solving t = x / 300. */
+const BELL_CORD_SAG = 22;
+
+function cordY(x: number) {
+  const t = x / 300;
+  return 5 + BELL_CORD_SAG * t * (1 - t);
+}
+
+/* Outer bells ride high and small, the inner pair hang longest, so the row
+   reads as a swag rather than a rack. The cords are long: the head of the card
+   is empty once the couple's photo dissolves, and short drops left a band of
+   bare board under them. */
+const SWAG_BELLS = [
+  { x: 40, drop: 48, scale: 0.86 },
+  { x: 95, drop: 82, scale: 1 },
+  { x: 150, drop: 58, scale: 0.92 },
+  { x: 205, drop: 82, scale: 1 },
+  { x: 260, drop: 48, scale: 0.86 }
+];
+
+/* Marigold fills the gaps between the bells, falling between their lengths so
+   the row hangs as a zigzag rather than a flat line. */
+const SWAG_STRANDS = [
+  { x: 67, length: 66 },
+  { x: 122, length: 42 },
+  { x: 178, length: 42 },
+  { x: 233, length: 66 }
+];
+
+function MarigoldStrand({ length }: { length: number }) {
+  const beads = [];
+  for (let y = 7; y <= length; y += 5.2) {
+    beads.push(y);
+  }
+
+  return (
+    <>
+      <path d={`M0 0V${length - 1}`} stroke="#1d4521" strokeWidth=".9" />
+      {beads.map((y, index) => (
+        <g key={y}>
+          <circle
+            cx="0"
+            cy={y}
+            r={index % 2 ? 2.4 : 2.8}
+            fill={index % 2 ? "#f2a63a" : "#e8821f"}
+          />
+          <circle cx="0" cy={y} r={index % 2 ? 1 : 1.2} fill="#c4620f" opacity=".5" />
+        </g>
+      ))}
+    </>
+  );
+}
+
+function Bell() {
+  return (
+    <>
+      {/* Crown loop and cap. */}
+      <path
+        d="M-1.9 1.4A1.9 1.9 0 0 1 1.9 1.4"
+        stroke="url(#swag-brass)"
+        strokeWidth="1.1"
+        fill="none"
+      />
+      <path d="M-2.6 1.4h5.2v1.4h-5.2Z" fill="url(#swag-brass)" />
+      {/* Body, then the flared rim drawn over it. */}
+      <path
+        d="M-6.2 15C-6.2 6.5-3.4 2.6 0 2.6C3.4 2.6 6.2 6.5 6.2 15Z"
+        fill="url(#swag-brass)"
+      />
+      <path
+        d="M-7.6 14.4C-7.6 17.8-4.2 19.4 0 19.4C4.2 19.4 7.6 17.8 7.6 14.4Z"
+        fill="url(#swag-brass)"
+        stroke="#7d5a1c"
+        strokeWidth=".4"
+      />
+      {/* A single soft glint, so the brass is not a flat cut-out. */}
+      <path
+        d="M-3.3 13.8C-3.3 8-2.3 4.8-1 4.1C-2.5 6.6-2.5 10.4-1.8 13.8Z"
+        fill="#fff3d2"
+        opacity=".42"
+      />
+      <circle cx="0" cy="21.4" r="1.9" fill="url(#swag-brass)" />
+    </>
+  );
+}
+
+export function BellSwag({ className = "" }: { className?: string }) {
+  return (
+    <svg
+      aria-hidden="true"
+      className={`bell-swag ${className}`.trim()}
+      // Height clears the longest bell: the cord sags to y ~10 at its knot,
+      // the drop is 82 and the bell hangs 23 below that.
+      viewBox="0 0 300 120"
+      fill="none"
+      // Pinned top, so the swag stays tied to the head of the card whatever
+      // height the container resolves to.
+      preserveAspectRatio="xMidYMin meet"
+    >
+      <defs>
+        <linearGradient id="swag-brass" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#f6dc9a" />
+          <stop offset="45%" stopColor="#d2a44e" />
+          <stop offset="100%" stopColor="#8e6a24" />
+        </linearGradient>
+      </defs>
+
+      {SWAG_STRANDS.map((strand) => (
+        <g key={`strand-${strand.x}`} transform={`translate(${strand.x} ${cordY(strand.x)})`}>
+          {/* The rotation lives on an inner group: a CSS transform would
+              otherwise override the translate on the element itself. */}
+          <g
+            className="swag-hang"
+            style={{ animationDelay: `${(strand.x % 70) / 26}s` }}
+          >
+            <MarigoldStrand length={strand.length} />
+          </g>
+        </g>
+      ))}
+
+      {SWAG_BELLS.map((bell) => (
+        <g key={`bell-${bell.x}`} transform={`translate(${bell.x} ${cordY(bell.x)})`}>
+          <g
+            className="swag-hang"
+            style={{ animationDelay: `${(bell.x % 80) / 24}s` }}
+          >
+            <path d={`M0 0V${bell.drop}`} stroke="#c7343c" strokeWidth="1.2" />
+            <g transform={`translate(0 ${bell.drop}) scale(${bell.scale})`}>
+              <Bell />
+            </g>
+          </g>
+        </g>
+      ))}
+
+      {/* The cord itself, drawn last so it crosses over every knot. */}
+      <path d="M0 5Q150 16 300 5" stroke="#c7343c" strokeWidth="1.8" strokeLinecap="round" />
+      <path
+        d="M0 5Q150 16 300 5"
+        stroke="#f0a89f"
+        strokeWidth=".6"
+        strokeLinecap="round"
+        opacity=".5"
+      />
+    </svg>
+  );
+}
+
 export function GoldDust({ count = 16 }: { count?: number }) {
   const motes = Array.from({ length: count }, (_, index) => index);
 

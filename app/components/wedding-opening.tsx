@@ -1,13 +1,19 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  AnimatePresence,
+  motion,
+  useInView,
+  useReducedMotion
+} from "framer-motion";
 import { Countdown } from "./countdown";
 import { ScratchReveal } from "./scratch-reveal";
 import { WeddingPortrait } from "./wedding-portrait";
 import { WaxSeal } from "./wax-seal";
 import { DiyaSprite } from "./celebration-artefacts";
 import {
+  BellSwag,
   FrameCorners,
   GoldDust,
   KalashamMark,
@@ -106,20 +112,37 @@ function PaperFlap({
 }
 
 export function WeddingOpening({
-  onAnnouncement
+  guestName,
+  onAnnouncement,
+  onInvitationOpen,
+  onJourneyReady,
+  resumeRevealed = false
 }: {
+  guestName?: string;
   onAnnouncement: () => void;
+  onInvitationOpen: () => void;
+  onJourneyReady: () => void;
+  resumeRevealed?: boolean;
 }) {
   const [act, setAct] = useState<Act>("sealed");
   // Held back so the countdown arrives after the save-the-date panel has
   // finished building itself around the uncovered number.
   const [heroReady, setHeroReady] = useState(false);
+  const landingRef = useRef<HTMLElement>(null);
+  const dateHeroRef = useRef<HTMLDivElement>(null);
+  const inView = useInView(landingRef, { amount: 0.05, margin: "10% 0px" });
   const reducedMotion = useReducedMotion();
   const reduced = Boolean(reducedMotion);
 
   const flapsOpen = act !== "sealed";
   const announced = act === "announcing" || act === "revealed";
   const revealed = act === "revealed";
+
+  useEffect(() => {
+    if (!resumeRevealed) return;
+    setAct("revealed");
+    setHeroReady(true);
+  }, [resumeRevealed]);
 
   useEffect(() => {
     if (act !== "unsealing") return;
@@ -139,6 +162,10 @@ export function WeddingOpening({
   }, [act, onAnnouncement]);
 
   useEffect(() => {
+    if (heroReady) onJourneyReady();
+  }, [heroReady, onJourneyReady]);
+
+  useEffect(() => {
     if (act !== "revealed") return;
     // After the rules, the label and the Telugu line have settled (~1.5s).
     const timeout = window.setTimeout(
@@ -152,6 +179,7 @@ export function WeddingOpening({
   // its pop, so the panel starts building outward from a number that has
   // already settled.
   const handleScratched = useCallback(() => {
+    dateHeroRef.current?.focus({ preventScroll: true });
     window.setTimeout(() => setAct("revealed"), reduced ? 0 : 760);
   }, [reduced]);
 
@@ -159,8 +187,10 @@ export function WeddingOpening({
     <section
       aria-label="Wedding invitation"
       className="landing"
+      data-active={inView ? "true" : "false"}
       data-act={act}
       id="opening"
+      ref={landingRef}
     >
       <div className="landing-sky" aria-hidden="true" />
       <GoldDust count={reduced ? 0 : 18} />
@@ -185,31 +215,34 @@ export function WeddingOpening({
             back into the card stock, leaving the save-the-date on bare board.
             No scale drift, which would read as a second movement under the
             date that is meant to be settling. */}
-        {announced && (
-          <motion.div
-            aria-hidden="true"
-            className="landing-photo"
-            initial={reduced ? false : { opacity: 0, scale: 1.06 }}
-            animate={{ opacity: revealed ? 0 : 0.92, scale: 1 }}
-            transition={
-              reduced
-                ? { duration: 0.25 }
-                : revealed
-                  ? { duration: 1.1, ease: "easeInOut" }
-                  : { duration: 1.4, ease: "easeOut" }
-            }
-          >
-            <WeddingPortrait
-              alt=""
-              float={false}
-              objectPosition="50% 18%"
-              preload
-              scene="opening"
-              sizes="100vw"
-              variant="bleed"
-            />
-          </motion.div>
-        )}
+        <motion.div
+          aria-hidden="true"
+          className="landing-photo"
+          initial={false}
+          animate={{
+            opacity: announced && !revealed ? 0.92 : 0,
+            scale: announced ? 1 : 1.04
+          }}
+          transition={
+            reduced
+              ? { duration: 0.25 }
+              : revealed
+                ? { duration: 1.1, ease: "easeInOut" }
+                : announced
+                  ? { duration: 1.4, ease: "easeOut" }
+                  : { duration: 0.3, ease: "easeOut" }
+          }
+        >
+          <WeddingPortrait
+            alt=""
+            float={false}
+            objectPosition="50% 18%"
+            preload
+            scene="opening"
+            sizes="100vw"
+            variant="bleed"
+          />
+        </motion.div>
 
         {/* Inside the frame, so the muggu reads as printed on the card stock
             rather than as wallpaper showing through behind it. */}
@@ -259,6 +292,30 @@ export function WeddingOpening({
           ))}
         </div>
 
+        {/* Brass bells and marigold take the place of the toranam, which snapped
+            away with the doors. They arrive only at the reveal, crossfading in
+            as the couple's photo dissolves, so they fill the head of the card
+            instead of hanging over their faces during the announcement. */}
+        <AnimatePresence>
+          {revealed && (
+            <motion.div
+              aria-hidden="true"
+              className="landing-bells"
+              key="bells"
+              initial={reduced ? false : { opacity: 0, y: -16 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              transition={{
+                duration: reduced ? 0.2 : 1.2,
+                delay: reduced ? 0 : 0.25,
+                ease: EASE
+              }}
+            >
+              <BellSwag />
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         <div className="landing-stage">
           {/* popLayout: the seal is lifted out of the flex column the instant
               it starts leaving, so the announcement can mount underneath it at
@@ -293,11 +350,20 @@ export function WeddingOpening({
                   transition={{ duration: reduced ? 0.2 : 0.6, ease: EASE }}
                 >
                   <KalashamMark className="landing-crest" />
-                  <span className="landing-telugu-crest">శుభలేఖ</span>
+                  <span className="landing-telugu-crest" lang="te">శుభలేఖ</span>
                   <span className="landing-invited">You are invited</span>
+                  {guestName ? (
+                    <span className="landing-guest-name">{guestName}</span>
+                  ) : null}
                 </motion.div>
 
-                <WaxSeal opened={flapsOpen} onOpen={() => setAct("unsealing")} />
+                <WaxSeal
+                  opened={flapsOpen}
+                  onOpen={() => {
+                    onInvitationOpen();
+                    setAct("unsealing");
+                  }}
+                />
 
                 <motion.span
                   className="landing-seal-hint"
@@ -360,9 +426,12 @@ export function WeddingOpening({
                 active={act === "announcing"}
                 autoReveal={reduced}
                 onRevealed={handleScratched}
+                revealed={resumeRevealed}
               >
                 <motion.div
                   className="date-hero"
+                  ref={dateHeroRef}
+                  tabIndex={-1}
                   // No entrance of its own. The rules, the label and the Telugu
                   // line hold their final positions from the start so the date
                   // never shifts; they just fade up once the foil is gone.
@@ -392,6 +461,7 @@ export function WeddingOpening({
                   </time>
                   <motion.span
                     className="date-hero-telugu"
+                    lang="te"
                     variants={dateTeluguOut}
                   >
                     వివాహ శుభముహూర్తం
@@ -412,7 +482,7 @@ export function WeddingOpening({
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: reduced ? 0 : 1.1, ease: EASE }}
             >
-              <Countdown variant="journey" />
+              <Countdown active={inView} variant="journey" />
             </motion.div>
           )}
         </div>

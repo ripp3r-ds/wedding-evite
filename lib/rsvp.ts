@@ -3,6 +3,7 @@ export type RsvpSubmission = {
   attendingHaldi: boolean;
   attendingWedding: boolean;
   attendingReception: boolean;
+  declined: boolean;
   travelNotes: string;
   timestamp: string;
 };
@@ -16,15 +17,23 @@ export async function logRsvpInBackground(
     return;
   }
 
+  const body = JSON.stringify(submission);
+  if (
+    typeof navigator !== "undefined" &&
+    "sendBeacon" in navigator &&
+    navigator.sendBeacon(GOOGLE_SCRIPT_URL, body)
+  ) {
+    return;
+  }
+
   try {
     await fetch(GOOGLE_SCRIPT_URL, {
       method: "POST",
       mode: "no-cors",
-      body: JSON.stringify(submission)
+      body,
+      keepalive: true
     });
   } catch (error) {
-    if (process.env.NODE_ENV !== "production") {
-      console.error("Unable to log RSVP to Google Sheets.", error);
-    }
+    console.error("Unable to log RSVP to Google Sheets.", error);
   }
 }

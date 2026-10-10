@@ -35,10 +35,12 @@ const presets: Record<
   { count: number; size: [number, number]; duration: [number, number]; rises: boolean }
 > = {
   marigold: { count: 20, size: [13, 30], duration: [7.5, 14], rises: false },
-  thalambralu: { count: 28, size: [6, 13], duration: [5, 9.5], rises: false },
-  // Fewer, slower diyas: the reception should read contemporary rather than
-  // like a second wedding.
-  diya: { count: 8, size: [18, 32], duration: [13, 21], rises: true }
+  // A proper showering handful. The grains are slender, so they carry far less
+  // visual weight each than a marigold head and need the numbers.
+  thalambralu: { count: 44, size: [7, 15], duration: [5, 9.5], rises: false },
+  // Still the slowest and largest of the three, so the reception reads
+  // contemporary rather than like a second wedding.
+  diya: { count: 16, size: [18, 32], duration: [13, 21], rises: true }
 };
 
 function MarigoldSprite({ tone }: { tone: number }) {
@@ -75,25 +77,36 @@ function MarigoldSprite({ tone }: { tone: number }) {
   );
 }
 
+/* Turmeric-stained rice. Every variant is a long basmati grain: the rounder
+   pearl that used to stand in for the pale grains read as confetti at the size
+   these fall. Drawn as a tapered capsule, roughly 1 : 3.4, with the tilt
+   varying by tone so a handful never looks combed. */
 function ThalambraluSprite({ tone }: { tone: number }) {
-  if (tone > 0.72) {
-    return (
-      <svg viewBox="0 0 20 20" fill="none">
-        <circle cx="10" cy="10" r="6.5" fill="#fdf4dd" />
-        <circle cx="8" cy="8" r="2.4" fill="#ffffff" opacity=".85" />
-        <circle cx="10" cy="10" r="6.5" stroke="#e3c98e" strokeWidth=".8" />
-      </svg>
-    );
-  }
-
-  const grain = tone > 0.4 ? "#f6dd9c" : "#f2c15f";
-  const tip = tone > 0.4 ? "#d9b566" : "#d79a34";
+  const pale = tone > 0.72;
+  const grain = pale ? "#fdf0cf" : tone > 0.4 ? "#f6dd9c" : "#f2c15f";
+  const tip = pale ? "#e6cc96" : tone > 0.4 ? "#d9b566" : "#d79a34";
+  const tilt = 8 + tone * 26;
 
   return (
     <svg viewBox="0 0 20 20" fill="none">
-      <ellipse cx="10" cy="10" rx="4" ry="8" fill={grain} transform="rotate(16 10 10)" />
-      <ellipse cx="10" cy="6" rx="2" ry="3" fill={tip} transform="rotate(16 10 10)" opacity=".75" />
-      <ellipse cx="8.6" cy="8" rx="1.1" ry="3" fill="#fffbe9" transform="rotate(16 10 10)" opacity=".7" />
+      <g transform={`rotate(${tilt} 10 10)`}>
+        <path
+          d="M10 2.2c1.9 1.6 2.8 4.2 2.8 7.8s-.9 6.2-2.8 7.8c-1.9-1.6-2.8-4.2-2.8-7.8S8.1 3.8 10 2.2Z"
+          fill={grain}
+        />
+        {/* Darker husk end, so the grain has a direction. */}
+        <path
+          d="M10 2.2c1.4 1.2 2.2 2.9 2.6 5-1.5.8-3.7.8-5.2 0 .4-2.1 1.2-3.8 2.6-5Z"
+          fill={tip}
+          opacity=".7"
+        />
+        {/* Highlight down one flank. */}
+        <path
+          d="M8.6 5.2c-.7 1.4-1 3-1 4.8s.3 3.4 1 4.8c-.9-1.2-1.4-2.9-1.4-4.8s.5-3.6 1.4-4.8Z"
+          fill="#fffbe9"
+          opacity=".75"
+        />
+      </g>
     </svg>
   );
 }

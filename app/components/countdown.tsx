@@ -2,8 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-
-const weddingMoment = Date.UTC(2026, 9, 29, 17, 0, 0);
+import {
+  CELEBRATIONS_END,
+  WEDDING_DAY_START,
+  WEDDING_MOMENT
+} from "../../lib/wedding-time";
 
 type TimeLeft = {
   days: number;
@@ -13,7 +16,7 @@ type TimeLeft = {
 };
 
 function getTimeLeft(now: number): TimeLeft {
-  const totalSeconds = Math.max(0, Math.floor((weddingMoment - now) / 1000));
+  const totalSeconds = Math.max(0, Math.floor((WEDDING_MOMENT - now) / 1000));
 
   return {
     days: Math.floor(totalSeconds / 86_400),
@@ -33,7 +36,10 @@ function CountdownUnit({
   reducedMotion: boolean | null;
 }) {
   return (
-    <div className="countdown-unit" aria-label={`${value ?? "—"} ${label}`}>
+    <div
+      className="countdown-unit"
+      aria-label={value === null ? `${label} loading` : `${value} ${label}`}
+    >
       <span className="countdown-value" aria-hidden="true">
         <AnimatePresence initial={false} mode="popLayout">
           <motion.span
@@ -43,7 +49,7 @@ function CountdownUnit({
             initial={{ opacity: 0, y: reducedMotion ? 0 : 10 }}
             transition={{ duration: reducedMotion ? 0 : 0.26 }}
           >
-            {value === null ? "—" : String(value).padStart(2, "0")}
+            {value === null ? "··" : String(value).padStart(2, "0")}
           </motion.span>
         </AnimatePresence>
       </span>
@@ -52,24 +58,64 @@ function CountdownUnit({
   );
 }
 
-export function Countdown({ variant = "story" }: { variant?: "story" | "journey" }) {
-  const [timeLeft, setTimeLeft] = useState<TimeLeft | null>(null);
+export function Countdown({
+  active = true,
+  variant = "story"
+}: {
+  active?: boolean;
+  variant?: "story" | "journey";
+}) {
+  const [now, setNow] = useState<number | null>(null);
   const reducedMotion = useReducedMotion();
 
   useEffect(() => {
-    const update = () => setTimeLeft(getTimeLeft(Date.now()));
+    const update = () => setNow(Date.now());
     update();
+    if (!active) return;
+
     const interval = window.setInterval(update, 1_000);
 
     return () => window.clearInterval(interval);
-  }, []);
+  }, [active]);
+
+  const timeLeft =
+    now !== null && now < WEDDING_MOMENT ? getTimeLeft(now) : null;
+  const weddingDay =
+    now !== null && now >= WEDDING_DAY_START && now < WEDDING_MOMENT;
+
+  if (now !== null && now >= WEDDING_MOMENT) {
+    const celebrationsComplete = now >= CELEBRATIONS_END;
+
+    return (
+      <section
+        aria-label={
+          celebrationsComplete
+            ? "The wedding celebrations are complete"
+            : "The wedding celebrations are underway"
+        }
+        className={`countdown countdown-${variant} countdown-message-state`}
+      >
+        <p className="countdown-kicker">
+          {celebrationsComplete ? "WITH LOVE AND GRATITUDE" : "THE CELEBRATIONS ARE UNDERWAY"}
+        </p>
+        <p className="countdown-message">
+          {celebrationsComplete
+            ? "Rithwik and Kalyani are so grateful you celebrated with them."
+            : "Today is filled with family, laughter, and blessings."}
+        </p>
+        <p className="countdown-date">Rithwik <span>&amp;</span> Kalyani</p>
+      </section>
+    );
+  }
 
   return (
     <section
       aria-label="Countdown to the wedding on October 29, 2026 at 10:30 PM India time"
       className={`countdown countdown-${variant}`}
     >
-      <p className="countdown-kicker">UNTIL THE MUHURTHAM</p>
+      <p className="countdown-kicker">
+        {weddingDay ? "TODAY IS THE DAY" : "UNTIL THE MUHURTHAM"}
+      </p>
       <div className="countdown-clock">
         <CountdownUnit label="Days" value={timeLeft?.days ?? null} reducedMotion={reducedMotion} />
         <span className="countdown-separator" aria-hidden="true">❖</span>

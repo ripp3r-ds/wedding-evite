@@ -10,17 +10,19 @@ export function ScratchReveal({
   active,
   autoReveal,
   children,
-  onRevealed
+  onRevealed,
+  revealed = false
 }: {
   active: boolean;
   autoReveal?: boolean;
   children: ReactNode;
   onRevealed: () => void;
+  revealed?: boolean;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const completeRef = useRef(false);
+  const completeRef = useRef(revealed);
   const moveCount = useRef(0);
-  const [scratched, setScratched] = useState(false);
+  const [scratched, setScratched] = useState(revealed);
   const [touched, setTouched] = useState(false);
 
   const finish = useCallback(() => {
@@ -137,6 +139,12 @@ export function ScratchReveal({
   useEffect(() => {
     if (active && autoReveal) finish();
   }, [active, autoReveal, finish]);
+
+  useEffect(() => {
+    if (!revealed || completeRef.current) return;
+    completeRef.current = true;
+    setScratched(true);
+  }, [revealed]);
 
   const measureScratch = useCallback(() => {
     const canvas = canvasRef.current;
